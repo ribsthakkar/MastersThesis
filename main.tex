@@ -4,7 +4,7 @@
 \usepackage{titlesec}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts, amsthm}
-\usepackage{algorithmic}
+% \usepackage{algorithmicx}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
@@ -17,7 +17,15 @@
 \usepackage{tabularx}
 \usepackage{float}
 \usepackage{placeins}
+\usepackage{epigraph}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+
 \sisetup{mode=text}
+
+% \renewcommand{\epigraphflush}{center}
+% \setlength{\epigraphrule}{0pt}
 
 % \usepackage[caption=false]{subfig}
 \usepackage[hyphens]{url}
@@ -33,7 +41,7 @@
 \urldef{\codeurl}\url{https://www.github.com/ribsthakkar/HierarchicalKarting}
 
 \author{Rishabh Saumil Thakkar}  	% Required
-\title{Designing a Safe and Optimal Hierarchical Controller for Multi-Agent Autonomous Racing}
+\title{Designing a Safe and Performant Hierarchical Controller for Multi-Agent Autonomous Racing}
 
 \supervisor
 	{Ufuk Topcu}
@@ -211,8 +219,10 @@
 \input{litreview}
 \input{synthesisproject}
 \input{headtohead}
-% \input{teamvteam}
-% \input{conclusion}
+\input{teamvteam}
+\input{conclusion}
+\appendix
+\input{appendix}
 \nocite{*}      % This command causes all items in the 		     %
                 % bibliographic database to be added to 	     %
                 % the bibliography, even if they are not 	     %

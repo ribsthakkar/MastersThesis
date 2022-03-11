@@ -1,5 +1,8 @@
-\chapter{Synthesis of Verifiably Safe and Optimal Racing Maneuvers using Temporal Logic Specifications} \label{chapter:synthesis}
-\section{General Multi-Agent Racing Game Formulation}
+\chapter{Synthesis of Verifiably Safe and Optimal Racing Maneuvers using Temporal Logic Specifications}
+% \epigraph{\flushright The Pledge}{}
+\epigraph{\flushright The first part is called "The Pledge". The magician shows you something ordinary \ldots he asks you to inspect it to see if it is indeed real, unaltered, normal. But of course... it probably isn't.}{Christopher Priest}
+\label{chapter:synthesis}
+\section{General Multi-Agent Racing Game Formulation} \label{section:genform}
 To motivate our discretized game approximation, we begin by outlining a general multi-agent racing game formulation involving rules seen in real-life racing. 
 
 % Table \ref{tab:gen_symbols} lists all of the variables and functions referenced in the formulation. 
@@ -79,7 +82,7 @@ This variable effectively represents a player's count of ``recent'' lane changes
 % \end{table}
 
 % Describe challenges of special constraints -> better modeled as a discrete game
-Most prior multi-agent racing formulations \cite{wang2019game, wang2021game, maqp} do not include the complexities we introduced through defining constraints \eqref{eq:gen_coll_avoid}-\eqref{eq:gen_lane_lim}. They usually have a similar form regarding continuous dynamics and discrete checkpoints \eqref{eq:gen_dyn}-\eqref{eq:gen_goal_time}, and their rules only involve staying on track \eqref{eq:gen_idx_dist} and collision avoidance with a fixed distance. However, in real-life racing, there do exist these complexities both in the form of mutually understood unwritten rules and explicit safety rules \cite{racingrules}. As a result, we account for two of the key rules that ensure the game remains fair and safe:
+Most prior multi-agent racing formulations \cite{Wang2019, Wang2021, Li2021} do not include the complexities we introduced through defining constraints \eqref{eq:gen_coll_avoid}-\eqref{eq:gen_lane_lim}. They usually have a similar form regarding continuous dynamics and discrete checkpoints \eqref{eq:gen_dyn}-\eqref{eq:gen_goal_time}, and their rules only involve staying on track \eqref{eq:gen_idx_dist} and collision avoidance with a fixed distance. However, in real-life racing, there do exist these complexities both in the form of mutually understood unwritten rules and explicit safety rules \cite{racingrules}. As a result, we account for two of the key rules that ensure the game remains fair and safe:
 \begin{enumerate}
     \item There is a greater emphasis on and responsibility of collision avoidance for a vehicle that is following another \eqref{eq:gen_coll_avoid}.
     \item The player may only switch lanes $L$ times while on a straight section of the track \eqref{eq:gen_lane_var}-\eqref{eq:gen_lane_lim}.
@@ -92,7 +95,7 @@ While functions may exist to evaluate these spatially and temporally dependent c
 \section{Discrete Game Formulation}
 In order to design a controller that can solve the realistic racing game formulation in the previous section, we must use an alternative to traditional optimization-based control methods. We recognize that complexities in the formulation arise from constraints over discrete properties of the players' trajectories. This characteristic of the formulation suggests that constructing a discrete abstraction of the game is an appropriate method to estimate feasible trajectories. In the following sections, we describe some abstractions and their justifications to construct a turn-based discrete game approximation of the original formulation. 
 
-\subsection{Abstraction of State Space}
+\subsection{Abstraction of State Space} \label{section:discstate}
 We begin by constructing the discrete abstraction of the state space from the original formulation. We do not explicitly specify any components of players' states when defining the original formulation because it is agnostic to the vehicle dynamics model being considered. However, including variables computed by constraints \eqref{eq:gen_idx_map} and \eqref{eq:gen_lane_var}, we assume each player's state in the original game at least consists of following five variables as they are the only ones encoded in our discrete state representation:
 \begin{itemize}
     \item position
@@ -107,7 +110,7 @@ In the following subsections, we describe how the aforementioned state variables
 \begin{figure}
 \begin{center}
    \includegraphics[width=\textwidth]{Figures/TrackAbstraction.png}
-\caption{Transformation of the continuous race track with checkpoints (red) into discrete lanes at each checkpoint (purple).}
+\caption[Transformation of racetrack in original formulation to discrete formulation.]{Transformation of the continuous race track with checkpoints (red) into discrete lanes at each checkpoint (purple).}
 \label{fig:racetrack_abs}
 \end{center}
 \end{figure}
@@ -131,7 +134,7 @@ The remaining components of players' states are either already discrete valued, 
 \end{itemize}
 where $k$ is the index of the state and the checkpoint associated with the state. We also use the notation $k^i$ to refer to the index of the player $i$'s checkpoint in the overall game state because it is possible for the players' indices to be different as we are modeling a turn-based game.
 
-\subsection{Abstraction of Dynamics}
+\subsection{Abstraction of Dynamics} \label{section:discdyn}
 Given discrete states of the players, we outline our abstraction of the dynamics, i.e. transitions between discrete states in the game. Because the discrete game is indexed by track checkpoint, we must also transform the players' control inputs. At each checkpoint, the players' choices are now the lane ID and target velocity bucket for the upcoming checkpoint. Next, we rewrite the constraints related to the racing rules in the original formulation as temporal logic specifications. We then discuss the specifics of how our state transitions are computed based on a given action and finish with describing the turn-based mechanism of the discrete formulation.
 
 \subsubsection{Temporal Logic Specifications of Rules} 
@@ -151,7 +154,7 @@ Constraints regarding the rules of racing for player $i$ in the original transfo
         \item $\square \; ((k \in \mathcal{S})  \implies (l^i_k \leq   L \; U \; k \notin \mathcal{S}))$
     \end{itemize} 
 \end{enumerate}
-The overall specification for each of the players is the conjunction of all of the listed temporal logic specifications. Given our state discretization and action set, we could use synthesis methods to produce a controller to meet the specifications for some objective. However, the computational complexity of synthesizing a controller to meet such specifications is not manageable due to the exponential growth with respect to the number of specifications and variables (CITE THIS). Therefore, we take advantage of the fact that most of these specifications are easily verified by simply examining a player's resulting state from a given state-action pair and that specification 1 is trivially satisfied by our state and action space abstraction (players are not allowed to choose target lanes outside of $\{1, ..., \lambda\}$). When constructing the model of the game, we simply disregard any player choice that violates the specifications thereby only considering states and trajectories that are allowed. 
+The overall specification for each of the players is the conjunction of the list. Given our state discretization and action set, we could use synthesis methods to produce a controller to meet the specifications for some objective. However, the computational complexity of synthesizing a controller to meet such specifications is not manageable due to the exponential growth with respect to the number of specifications and variables \cite{Chen2013}. Therefore, we take advantage of the fact that most of these specifications are easily verified by simply examining a player's resulting state from a given state-action pair and that specification 1 is trivially satisfied by our state and action space abstraction (players are not allowed to choose target lanes outside of $\{1, ..., \lambda\}$). When constructing the model of the game, we simply disregard any player choice that violates the specifications thereby only considering states and trajectories that are allowed. 
 \subsubsection{Computing State Transitions}
 To check if a state-action pair satisfies the temporal logic specifications and the reasonably approximates vehicle dynamics, we must have a straightforward way of computing the resulting state variables when applying some action. 
 
@@ -199,7 +202,7 @@ Using these calculations, we have a way of computing the exact sequence of state
 \subsubsection{Turn-Based Mechanics}
 Although players make decisions concurrently in the original game and real-life, our discrete abstraction is a modeled as a turn-based game. Because the states are indexed by the checkpoint instead of time, the game is played by evaluating the choices all players one checkpoint at a time. The order in which the players choose their actions at each checkpoint is determined by the player who has the smallest time state at the checkpoint being processed. A lower time state value implies that a player was at the given checkpoint before other players, so it would have made its choice at that location before the others in the continuous setting. This ordering also implies that players who arrive at a checkpoint after preceding players observe the actions of those preceding players preserving the realistic flow of information. Most importantly, because the ordering forces the following players to choose last, we also capture the rule that the following players (i.e. those that are ``behind'' others) are responsible for collision avoidance after observing the leading players' actions. As a result, in conjunction with satisfying specification 2, we model realistic collision avoidance rules. 
 
-\subsection{Discrete Game Objective}
+\subsection{Discrete Game Objective} \label{section:discobj}
 The final component of our discrete game is the determining the rewards and the objective. The reward function for a player $i$ is: 
 \begin{equation}
     R^i(s^1, ... s^n) = \begin{cases} 
@@ -210,7 +213,7 @@ The final component of our discrete game is the determining the rewards and the 
 It is zero for all states except the one after all players have reached the final checkpoint. At the final checkpoint, player $i$'s reward is the pairwise difference in the time state with each player after everyone has reached the goal, which resembles the original game formulation's objective \eqref{eq:gen_obj}. The objective for each player is to simply maximize this reward.
 
 \subsection{Summary of Formulation}
-Given the state space, dynamics, and objective of the game, we have effectively constructed a finite dynamic game. We write this game in a more general form as a stochastic multiplayer game (SMG) defined in CITE HERE\footnote{https://www.prismmodelchecker.org/papers/tacas12.pdf} as a tuple of the following elements:
+Given the state space, dynamics, and objective of the game, we have effectively constructed a finite dynamic game. We write this game in a more general form as a stochastic multiplayer game (SMG) defined by Chen et al. as a tuple of the following elements \cite{Chen2013}:
 
 
 \begin{itemize}
@@ -222,20 +225,21 @@ Given the state space, dynamics, and objective of the game, we have effectively 
     \item $L: S \rightarrow 2^{AP}$ is the labeling function for the states for the set $AP$. The function labels all states where all players have reached the final checkpoint with $\{\text{goal}\}$, and all other states with $\varnothing$.
 \end{itemize}
 
-Once in the SMG form, we can use state-of-the-art model checking tools with a simple reachability specification, $\lozenge \text{goal}$, to synthesize optimal strategies for the players to maximize their rewards. Furthermore, we are guaranteed to find a pure strategy Nash equilibrium because we constructed a finite dynamic game. CITETHIS\footnote{\url{https://econ.uiuc.edu/~hrtdmrt2/Teaching/GT_2017_19/L3.pdf}}.
+Once in the SMG form, we can use state-of-the-art model checking tools with a simple reachability specification, $\lozenge \text{goal}$, to synthesize optimal strategies for the players to maximize their rewards. 
+% Furthermore, we are guaranteed to find a pure strategy Nash equilibrium because we constructed a finite dynamic game. CITETHIS\footnote{\url{https://econ.uiuc.edu/~hrtdmrt2/Teaching/GT_2017_19/L3.pdf}}.
 
 \section{Case Studies of Strategic Scenarios}
 \begin{figure}
 \begin{center}
 \includegraphics[width=\textwidth]{Figures/TrackShapes.png}
-    \caption{\label{fig:track_shapes} Three track types straight, hairpin, and chicane visualized from left to right. Each shape is discretized by 6 checkpoints and 3 lanes. The discrete nodes are color coded using their classification as straights (blue) or corners (red).}
+    \caption[Discrete representation of common track shapes.]{\label{fig:track_shapes} Three track types straight, hairpin, and chicane visualized from left to right. Each shape is discretized by 6 checkpoints and 3 lanes. The discrete nodes are color coded using their classification as straights (blue) or corners (red).}
 \end{center}
 \end{figure}
 To evaluate if our discrete game formulation is a reasonable representation of real-life racing, we apply the model to several case studies resembling some common race scenarios for two players. The goal is to visualize and interpret the produced strategies to ensure it matches with our prior understanding of what might happen in a similar scenario in real-life racing. We categorize the scenarios based on three common types of track shapes: long straight, hairpin, and chicane shown in Figure \ref{fig:track_shapes}. For each of the track shapes, we explore various combinations of initial states for tire wear, velocity, and elapsed time for the players. We analyse the scenarios in the perspective of player 1 and start it with a non-zero time state for each study. Setting a non-zero initial time state indicates that it is starting with a disadvantage and is behind player 2. However, we analyze the initial states where player 1 is able to overtake player 2 or see what the best time gap it achieves. 
 
 In order to make the results of the studies more interesting, we also assume that the players' vehicles have different dynamical parameters. Player 1 has a higher top speed than racer 2 but has a lower acceleration than racer 2. However, racer 2 has a higher limit for maximum lateral acceleration, which is used for computing maximum velocity allowed during turning, but it also has a higher tire wear factor. If both cars have the exact same configuration, the strategies of both vehicles would be similar. Furthermore, it would be near impossible for the player 1 to overtake the player 2 with perfect play. The exact parameters used when generating the transitions functions for each player is listed in Table \ref{table:params}.
 
-\begin{table}[]
+\begin{table}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|l|l|}
 \hline
@@ -251,7 +255,7 @@ Minimum lateral acceleration (force that can be sustained regardless at any tire
 \label{table:params}
 \end{table}
 
-For the results in each case, we plot the ``best" time gap player 1 achieves assuming optimal strategy is implemented by both the players. If this value is positive, it means player 1 has reached the goal position before player 2 and vice-versa if negative. All of the models are implemented using PRISM-games v3.0, is a state-of-the-art model checking software (CITE THIS). Furthermore, our analysis for each track shape includes a visualization plotting the optimal strategy and comparison of the resulting strategy to a similar, real-life racing scenario. This comparison allows us to verify that the strategic choices of our model synthesis are comparable to human experts. 
+For the results in each case, we plot the ``best" time gap player 1 achieves assuming optimal strategy is implemented by both the players. If this value is positive, it means player 1 has reached the goal position before player 2 and vice-versa if negative. All of the models are implemented using PRISM-games v3.0, a state-of-the-art model checking software \cite{prismgames}. Furthermore, our analysis for each track shape includes a visualization plotting the optimal strategy and comparison of the resulting strategy to a similar, real-life racing scenario. This comparison allows us to verify that the strategic choices of our model synthesis are comparable to human experts. 
 
 \subsection{Long Straight}
 The first track shape is the simple long straight. In this case, tire wear has little to no effect on the performance of the players because the vehicles are not subject to significant lateral loads. Rather, we know from real-life races that we can having advantage in the initial time gap or higher initial speed when approaching the long straight results in a favorable time gap at the end of the straight. Therefore, we experiment with various initial velocities and time gaps between the players. Player 1's initial value of the time state, i.e. time disadvantage, varies from \SI{0.5}{\second} to \SI{0.7}{\second}. However, player 1's initial speeds may be higher in some experiments yielding the possibility of an overtake.

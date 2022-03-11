@@ -1,5 +1,22 @@
-\chapter{Hierarchical Control for Team-Based Multi-Agent Racing} \label{chapter:team}
-\section{Team-based Racing Game Formulation} %tdd
-\section{Team-based Formulation of High-Level Discrete Game Planner} %td
-\section{Team-based Formulation of Low-Level Planner} %td
+\chapter{Hierarchical Control for Team-Based Multi-Agent Racing}
+% \epigraph{\flushright The Prestige}{}
+\epigraph{\flushright Because making something disappear isn't enough; you have to bring it back. That's why every magic trick has a third act, the hardest part, the part we call ``The Prestige."}{Christopher Priest}
+\label{chapter:team}
+The final part of this report introduces another important facet of real-life racing: teamwork. Most professional racing series such as IndyCar, Formula 1, and Formula E involve two competitions that run concurrently. There is an individual competition amongst the drivers, but there is also a competition over the overall performance of the racing teams based on the finishing positions of their drivers. Therefore, drivers are required to race with a mix of cooperative and competitive objectives in mind. 
+
+Consider the example in Figure \ref{fig:team_motivating}. Player 1 and player 2 are on one team, and players 3 and 4 are on another team. Player 1 is clearly first and almost at the finish line, so it is unlikely that player 3, who is in second, can catch him before the finish line. On the other hand, player 4 is in last, but he is close to player 2 in third. Player 3 now has three high-level choices to consider:
+\begin{enumerate}
+    \item Try hard to overtake player 1 before the finish line.
+    \item Maintain one's position to the finish line.
+    \item Purposely slow down with the risk of being passed by player 2, but also improve the chances of player 4 overtaking player 2 by blocking player 4.
+\end{enumerate}
+If all players were on their own team, choice 1 would be the most obvious because that's where one would expect the maximum payoff. However, because there is an incentive to finish higher overall as a team, player 3 must consider the payoffs from all three choices. The payoffs and the risks associated with these choices are not necessarily obvious to evaluate. 
+
+Incorporating such complexities only makes the the original problem harder to solve. Therefore, we propose that using our hierarchical control structure developed over the prior two chapters would allow players to evaluate the long-term implications of complex strategies in team-based autonomous racing while still adhering to the rules of the game. 
+
+\section{Team-based General Racing Game Formulation}
+
+\section{Team-based Hierarchical Control}
+\subsection{Team-based High-Level Discrete Game Formulation}
+\subsection{Team-based Low-Level Formulation}
 \section{Team-based Racing Results}

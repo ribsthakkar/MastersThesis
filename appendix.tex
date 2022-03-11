@@ -1,0 +1,39 @@
+\section{Results from case studies in Chapter \ref{chapter:synthesis}}
+
+\section{Results from head-to-head racing experiments in Chapter \ref{chapter:hier}} \label{app:hier_results}
+\begin{table} [H]
+\centering
+\begin{tabular}{@{}lllllllll@{}} 
+\toprule
+Agent 1  & Agent 2   & A1 Wins & A2 Wins & A1 DNFs & A2 DNFs & A1 Avg. Win Margin & A2 Avg. Win Margin & Avg. Safety Score\\ \midrule
+MCTS-RL  & E2E       &         &         &         &         &                  &   &               \\
+         & MCTS-LQR  &         &         &         &         &                  &   &               \\
+         & Fixed-LQR &         &         &         &         &                  &   &               \\
+E2E      & MCTS-LQR  &         &         &         &         &                  &    &              \\
+         & Fixed-LQR &         &         &         &         &                  &   &               \\
+MCTS-LQR & Fixed-LQR &         &         &         &         &                  &    &              \\ \bottomrule
+\end{tabular}
+\vspace{1 mm}
+\caption{Results from head-to-head racing on the oval track.}
+ \label{tab:results_oval}
+\end{table}
+
+\begin{table} [H]
+\centering
+\begin{tabular}{@{}lllllllll@{}} 
+\toprule
+Agent 1  & Agent 2  & A1 Wins & A2 Wins & A1 DNFs & A2 DNFs & A1 Avg. Win Margin & A2 Avg. Win Margin & Avg. Safety Score \\ \midrule
+MCTS-RL  & E2E       &         &         &         &         &                  &   &               \\
+         & MCTS-LQR  &         &         &         &         &                  &   &               \\
+         & Fixed-LQR &         &         &         &         &                  &   &               \\
+E2E      & MCTS-LQR  &         &         &         &         &                  &    &              \\
+         & Fixed-LQR &         &         &         &         &                  &    &              \\
+MCTS-LQR & Fixed-LQR &         &         &         &         &                  &   &               \\ \bottomrule
+
+\end{tabular}
+\vspace{1 mm}
+\caption{Results from head-to-head racing on the complex track.}
+ \label{tab:results_complex}
+\end{table}
+
+\section{Results from 2v2 team racing in Chapter \ref{chapter:team}}
