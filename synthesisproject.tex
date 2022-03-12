@@ -206,8 +206,8 @@ Although players make decisions concurrently in the original game and real-life,
 The final component of our discrete game is the determining the rewards and the objective. The reward function for a player $i$ is: 
 \begin{equation}
     R^i(s^1, ... s^n) = \begin{cases} 
-                (\sum_{j \in N \setminus i} s^j_t) - |N-1|s^i_t & (\bigwedge_{m \in N} s^m_k   = c_\tau) \\ 
-                0    & \quad \text{otherwise}
+                (\sum_{j \in N \setminus i} s^j_t) - |N-1|s^i_t & \text{if } (\bigwedge_{m \in N} s^m_k   = c_\tau) \\ 
+                0    & \text{otherwise}
                 \end{cases}
 \end{equation}
 It is zero for all states except the one after all players have reached the final checkpoint. At the final checkpoint, player $i$'s reward is the pairwise difference in the time state with each player after everyone has reached the goal, which resembles the original game formulation's objective \eqref{eq:gen_obj}. The objective for each player is to simply maximize this reward.

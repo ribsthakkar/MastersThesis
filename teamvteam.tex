@@ -2,21 +2,56 @@
 % \epigraph{\flushright The Prestige}{}
 \epigraph{\flushright Because making something disappear isn't enough; you have to bring it back. That's why every magic trick has a third act, the hardest part, the part we call ``The Prestige."}{Christopher Priest}
 \label{chapter:team}
-The final part of this report introduces another important facet of real-life racing: teamwork. Most professional racing series such as IndyCar, Formula 1, and Formula E involve two competitions that run concurrently. There is an individual competition amongst the drivers, but there is also a competition over the overall performance of the racing teams based on the finishing positions of their drivers. Therefore, drivers are required to race with a mix of cooperative and competitive objectives in mind. 
+The final part of this report introduces another important facet of real-life racing: teamwork. Most professional racing series such as IndyCar, Formula 1, and Formula E involve two competitions that run concurrently. There is an individual competition amongst the drivers, but there is also a competition over the overall performance of the racing teams based on the finishing positions of their drivers. Therefore, drivers are required to race with a mix of cooperative and competitive objectives in mind. To our knowledge, this is the first work that considers this aspect in the context of autonomous racing. 
 
 Consider the example in Figure \ref{fig:team_motivating}. Player 1 and player 2 are on one team, and players 3 and 4 are on another team. Player 1 is clearly first and almost at the finish line, so it is unlikely that player 3, who is in second, can catch him before the finish line. On the other hand, player 4 is in last, but he is close to player 2 in third. Player 3 now has three high-level choices to consider:
 \begin{enumerate}
-    \item Try hard to overtake player 1 before the finish line.
+    \item Try to overtake player 1 before the finish line.
     \item Maintain one's position to the finish line.
     \item Purposely slow down with the risk of being passed by player 2, but also improve the chances of player 4 overtaking player 2 by blocking player 4.
 \end{enumerate}
-If all players were on their own team, choice 1 would be the most obvious because that's where one would expect the maximum payoff. However, because there is an incentive to finish higher overall as a team, player 3 must consider the payoffs from all three choices. The payoffs and the risks associated with these choices are not necessarily obvious to evaluate. 
+If all players were racing independently, choice 1 would be the most obvious because that's where one would expect the maximum payoff. However, because there is an incentive to finish higher overall as a team, player 3 must consider the payoffs from all three choices. The payoffs and the risks associated with these choices are not necessarily obvious to evaluate. The implications of the choices are not necessarily immediate observed, and it is usually challenging to switch from one choice to the next. For example, committing to the choice 3 means that player 3 cannot realistically change his mind and switch to the choice 1 if he realizes the risk is too high. 
 
-Incorporating such complexities only makes the the original problem harder to solve. Therefore, we propose that using our hierarchical control structure developed over the prior two chapters would allow players to evaluate the long-term implications of complex strategies in team-based autonomous racing while still adhering to the rules of the game. 
+We've discussed in prior chapters how the original formulation, before the introduction of team-based objectives, is already a challenging problem to tackle. Adding these complexities only makes the problem more difficult. Therefore, we propose that using our hierarchical control structure is even more vital in these scenarios as it allows players to evaluate the long-term implications of complex strategies while still adhering to the rules of the game. We begin by generalizing all of our racing game formulations to adapt to the team-based setting.
 
-\section{Team-based General Racing Game Formulation}
+\section{Formulation Updates for Team-based Racing}
+To adapt each of our formulations for team-based racing, we just introduce some additional notation to indicate how the teams are split up and describe how to update the objective function to reflect considerations for overall team performance. The constraints in the game remain the same as players still must follow the safety and fairness rules regarding lane changes, collision avoidance, and track constraints.
+\subsection{General Racing Game Formulation}
+We introduce a set $M$ consisting of subsets of players in $N$. Each of the sets in $M$ represents a team of players who have a share the objective of also improving the teams overall finishing positions. We incorporate a multiplier $\zeta \in [0,1]$ to balance a player's emphasis on his team objective vs. his personal objective. For a player $i$ on team $\mu$, the updated objective of the general formulation is as follows:
+\begin{equation} \label{eq:gen_team_obj}
+    \min_{u^i_0, ..., u^i_T} \gamma^i+\zeta (\sum_{j \in \mu \setminus i} \gamma^k) - \frac{(1+\zeta(|\mu|-1))\sum_{j \in N \setminus \mu }\gamma^j}{|N|-|\mu|} 
+\end{equation}
+If $\zeta=0$, then the objective closely resembles the head-to-head case but is different in that the player is only minimizing his pairwise differences in finishing time with all other players not on his team. If $\zeta=1$, the player places equal emphasis on his own finishing time with that of all other members in his team. Lastly, this objective function does generalize to the head-to-head racing scenario studied previously because each player's team set would contain 1 just one element, i.e. $|\mu|=1$, and the value of $\zeta$ would be irrelevant. 
 
-\section{Team-based Hierarchical Control}
-\subsection{Team-based High-Level Discrete Game Formulation}
-\subsection{Team-based Low-Level Formulation}
+\subsection{High-Level Discrete Game Formulation}
+The updated discrete game objective has a similar form to the updated objective of the general game formulation because both of have a similar structure in their original form. The only difference between the original discrete game reward function and original game formulation is the sign because the objective in the discrete game is to maximize rewards. We reuse the same symbols introduced in the prior section. The updated reward function for player $i$ in the discrete game on team $\mu$ and a team performance multiplier is:
+\begin{equation}
+    R^i(s^1, ... s^n) = \begin{cases} 
+                \frac{(1+\zeta(|\mu|-1))\sum_{j \in N \setminus \mu} s^j_t}{|N|-|\mu|} - s^i_t - \zeta(\sum_{j \in \mu \setminus i} s^k_t) & \text{if } (\bigwedge_{p \in N} s^p_k   = c_\tau) \\ 
+                0    & \text{otherwise}
+                \end{cases}
+\end{equation}
+
+\subsection{Low-Level Simplified Game Formulation}
+Although we do not directly solve the low-level formulation introduced in the previous chapter, we still provide an updated objective function for completeness. In the original low-level formulation, the objective is to maximize the checkpoint difference at the end of the planning horizon. We use the similar trick of multiplying the performance of teammates by a factor $\zeta$ and normalizing the scores based on the number of opponents and teammates. The updated objective for player $i$ on team $\mu$ playing the low-level game is:
+\begin{equation} \label{eq:ll_team_obj}
+    \min_{u^i_{1}, ..., u^i_{\delta}} (\frac{((1+\zeta(|m|-1))\sum^N_{j \in N\setminus \mu}r^j_{\delta}}{|N|-|m|} -  r^i_{\delta} - \zeta\sum_{j \in \mu \setminus i}r^j_\delta) \; +  
+    \alpha \sum_{c={r^i_{1}}}^{{r^i_{1}}+k} \eta^i_c
+\end{equation}
+
+Again, there are two parts to the low-level objective. The first part targets to pass as many checkpoints as possible as a team. The second part targets to hit his target waypoints as closely as possible. The second part remains unchanged from the original formulation, but the first part considers the team's overall count of passing the checkpoints within the fixed time horizon. 
+
+We do not directly solve the low-level simplified formulation, rather integrate into a MARL-based model and further simplify it into an LQNG. Therefore, in the following subsections, we discuss how the implementation of these controllers is updated to represent the updated objective of the low-level game.
+
+\subsubsection{Multi-Agent Reinforcement Learning Controller}
+We make two changes to our MARL model to reflect the changes of the low-level formulation. First, we update the reward structure to incorporate the overall team-performance calculations. We introduce a shared reward for all agents of a team using the order in which the checkpoints are passed resembling the points that are awarded to teams based on their driver's finishing positions in real-life racing. Using this shared reward mechanism connects to the second change to the MARL model, which is changing the learning algorithm used to train the control policy. We use an algorithm called posthumous counterfactual credit assignment) developed by the creators of Unity ML-Agents library \cite{poca}. Their algorithm is an extension on the counterfactual multi-agent policy gradients algorithm by modifying how team rewards impact the policy after an agent might have reached the end of its life. In our case, end of an agent's life refers to finishing the race. 
+
+\subsubsection{Linear-Quadratic Nash Game Controller}
+Updating the LQNG-based controller does not require any explicit changes to the LQNG formulation. In the original LQNG formulation, we introduced a series of multipliers $\rho$ that are multiplied with other players' distances to their upcoming waypoints in the second component of the objective \eqref{eq:lqng_obj2}. We simply flip the signs of those multipliers for the players on the ego player's team. By doing so, the player will no longer have an objective to hinder those players' progress towards their checkpoints. Instead, it will try to help them. 
+
 \section{Team-based Racing Results}
+Our experiments now include 2v2 head-to-head racing on the basic oval track (which the learning-based agents were trained on) and the more complex track shown in Figure \ref{fig:experiment_tracks}. Each team is composed of two players both using one of the five types of implemented controllers, MCTS-RL, MCTS-LQNG, E2E, Fixed-LQNG, and Fixed-RL, constructing five teams. Every pair of teams competes head-to-head in 96 races on both tracks. The dynamical parameters (cornering limitations, top speed, acceleration, braking, etc.) of each player's vehicle are identical, and the players start every race at the same initial checkpoint. The only difference in their initial states is the lane in which they start. In order to maintain fairness with respect to starting closer to the optimal racing line, we rotate through every ordering of the when assigning their initial lanes.
+
+Our experiments seek to reinforce the importance of hierarchical game-theoretic reasoning. We are also interested in observing maneuvers where teammates coordinate positioning to help pass or defend against the opposing team. We assign points to each of the four finishing positions: [10, 7.5, 6, 4], and aggregate the points at the end of the race for each team. In addition, for each team, we count the number of 1st place finishes, average collisions-at-fault per race, average illegal lane changes per race, and a safety score (a sum of the prior two metrics). Appendix \ref{app:team_results} provides tables with a complete breakdown of the results. We also provide a video\footnote{\vidurlteam} demonstrating them in action. 
+
+
