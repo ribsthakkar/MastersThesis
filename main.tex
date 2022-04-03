@@ -20,6 +20,7 @@
 \usepackage{epigraph}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+% \usepackage{appendix}
 \usepackage{enumitem}
 
 \sisetup{mode=text}
@@ -132,7 +133,7 @@
 % etc., you need to make an adjustment to the Table of Contents with the
 % command \longtocentry.
 %
-%\longtocentry 
+\longtocentry 
 
 
 
@@ -191,8 +192,9 @@
 \begin{acknowledgments}	
 
 % Ufuk Topcu
-% David Fridovich-Keil
 % Stephen Boyles
+% David Fridovich-Keil
+% Zhe Xu
 
 % Mita, Karthik, Atulya, Alex, Avinash, Ryan, Amit, Monish, Brian
 % Brother/Parents
@@ -205,6 +207,7 @@
 % Do NOT use \begin{abstract} ... \end{abstract}.
 %
 \utabstract
+\include{abstract}
 \indent
 
 
@@ -222,7 +225,8 @@
 \input{headtohead}
 \input{teamvteam}
 \input{conclusion}
-\appendix
+
+\appendices
 \input{appendix}
 \nocite{*}      % This command causes all items in the 		     %
                 % bibliographic database to be added to 	     %

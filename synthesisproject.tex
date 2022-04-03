@@ -1,6 +1,6 @@
 \chapter{Synthesis of Verifiably Safe and Optimal Racing Maneuvers using Temporal Logic Specifications}
 % \epigraph{\flushright The Pledge}{}
-\epigraph{\flushright The first part is called "The Pledge". The magician shows you something ordinary \ldots he asks you to inspect it to see if it is indeed real, unaltered, normal. But of course... it probably isn't.}{Christopher Priest}
+\epigraph{\flushright The first part is called ``The~ Pledge.'' The magician shows you something ordinary\ldots he asks you to inspect it to see if it is indeed real, unaltered, normal. But of course\ldots it probably isn't.}{Christopher Priest, \textit{The Prestige}}
 \label{chapter:synthesis}
 \section{General Multi-Agent Racing Game Formulation} \label{section:genform}
 To motivate our discretized game approximation, we begin by outlining a general multi-agent racing game formulation involving rules seen in real-life racing. 
@@ -92,7 +92,7 @@ The first rule ensures that a leading player can make a decision without needing
 
 While functions may exist to evaluate these spatially and temporally dependent constraints in the formulation, their discrete nature suggests that they cannot be easily differentiated. Therefore, it is not possible to simply apply state-of-the-art optimization algorithms would not apply to produce optimal control inputs in real-time. 
 
-\section{Discrete Game Formulation}
+\section{Discrete Game Formulation} \label{section:discgame}
 In order to design a controller that can solve the realistic racing game formulation in the previous section, we must use an alternative to traditional optimization-based control methods. We recognize that complexities in the formulation arise from constraints over discrete properties of the players' trajectories. This characteristic of the formulation suggests that constructing a discrete abstraction of the game is an appropriate method to estimate feasible trajectories. In the following sections, we describe some abstractions and their justifications to construct a turn-based discrete game approximation of the original formulation. 
 
 \subsection{Abstraction of State Space} \label{section:discstate}

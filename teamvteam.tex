@@ -1,23 +1,30 @@
 \chapter{Hierarchical Control for Team-Based Multi-Agent Racing}
 % \epigraph{\flushright The Prestige}{}
-\epigraph{\flushright Because making something disappear isn't enough; you have to bring it back. That's why every magic trick has a third act, the hardest part, the part we call ``The Prestige."}{Christopher Priest}
+\epigraph{\flushright Because making something disappear isn't enough; you have to bring it back. That's why every magic trick has a third act, the hardest part, the part we call ``The~ Prestige.''}{Christopher Priest, \textit{The Prestige}}
 \label{chapter:team}
 The final part of this report introduces another important facet of real-life racing: teamwork. Most professional racing series such as IndyCar, Formula 1, and Formula E involve two competitions that run concurrently. There is an individual competition amongst the drivers, but there is also a competition over the overall performance of the racing teams based on the finishing positions of their drivers. Therefore, drivers are required to race with a mix of cooperative and competitive objectives in mind. To our knowledge, this is the first work that considers this aspect in the context of autonomous racing. 
 
-Consider the example in Figure \ref{fig:team_motivating}. Player 1 and player 2 are on one team, and players 3 and 4 are on another team. Player 1 is clearly first and almost at the finish line, so it is unlikely that player 3, who is in second, can catch him before the finish line. On the other hand, player 4 is in last, but he is close to player 2 in third. Player 3 now has three high-level choices to consider:
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{Figures/TeamMotiv.png}
+  \caption[Motivating example for team-based racing] {Player 3's strategy is unclear. Should he try to pass Player 1, slow down on purpose to try help Player 4 pass Player 3, or maintain his position?}
+  \label{fig:team_motivating}
+\end{figure}
+
+Consider the example in Figure \ref{fig:team_motivating}. Player 1 and Player 2 are on one team, and Player 3 and Player 4 are on another team. Player 1 is clearly first and almost at the finish line, so it is unlikely that Player 3, who is in second, can catch him before the finish line. On the other hand, Player 4 is in last, but he is close to Player 2 in third. Player 3 now has three high-level choices to consider:
 \begin{enumerate}
-    \item Try to overtake player 1 before the finish line.
+    \item Try to overtake Player 1 before the finish line.
     \item Maintain one's position to the finish line.
-    \item Purposely slow down with the risk of being passed by player 2, but also improve the chances of player 4 overtaking player 2 by blocking player 4.
+    \item Purposely slow down with the risk of being passed by Player 2, but also improve the chances of Player 4 overtaking Player 2 by slowing down Player 2.
 \end{enumerate}
-If all players were racing independently, choice 1 would be the most obvious because that's where one would expect the maximum payoff. However, because there is an incentive to finish higher overall as a team, player 3 must consider the payoffs from all three choices. The payoffs and the risks associated with these choices are not necessarily obvious to evaluate. The implications of the choices are not necessarily immediate observed, and it is usually challenging to switch from one choice to the next. For example, committing to the choice 3 means that player 3 cannot realistically change his mind and switch to the choice 1 if he realizes the risk is too high. 
+If all players were racing independently, choice 1 would be the most obvious because that's where one would expect the maximum payoff. However, because there is an incentive to finish higher overall as a team, player 3 must consider the payoffs from all three choices. The payoffs and the risks associated with these choices are not necessarily obvious to evaluate. The implications of the choices are not immediately observed, and it is usually challenging to switch from one choice to the next. For example, committing to the choice 3 means that player 3 cannot realistically change his mind and switch to the choice 1 if he realizes the risk is too high. 
 
 We've discussed in prior chapters how the original formulation, before the introduction of team-based objectives, is already a challenging problem to tackle. Adding these complexities only makes the problem more difficult. Therefore, we propose that using our hierarchical control structure is even more vital in these scenarios as it allows players to evaluate the long-term implications of complex strategies while still adhering to the rules of the game. We begin by generalizing all of our racing game formulations to adapt to the team-based setting.
 
 \section{Formulation Updates for Team-based Racing}
-To adapt each of our formulations for team-based racing, we just introduce some additional notation to indicate how the teams are split up and describe how to update the objective function to reflect considerations for overall team performance. The constraints in the game remain the same as players still must follow the safety and fairness rules regarding lane changes, collision avoidance, and track constraints.
+To adapt each of our formulations for team-based racing, we just introduce some additional notation to indicate how the teams are organized and describe how to update the objective function to reflect both competitive and cooperative goals. The constraints in the game remain the same as players still must follow the safety and fairness rules regarding lane changes, collision avoidance, and track constraints.
 \subsection{General Racing Game Formulation}
-We introduce a set $M$ consisting of subsets of players in $N$. Each of the sets in $M$ represents a team of players who have a share the objective of also improving the teams overall finishing positions. We incorporate a multiplier $\zeta \in [0,1]$ to balance a player's emphasis on his team objective vs. his personal objective. For a player $i$ on team $\mu$, the updated objective of the general formulation is as follows:
+We introduce a set $M$ consisting of subsets of players in $N$. Each of the sets in $M$ represents a team of players who have a share the objective of also improving the teams overall finishing positions. We introduce a multiplier $\zeta \in [0,1]$ to balance a player's emphasis on his team objective vs. his personal objective. For a player $i$ on team $\mu$, the updated objective of the general formulation is as follows:
 \begin{equation} \label{eq:gen_team_obj}
     \min_{u^i_0, ..., u^i_T} \gamma^i+\zeta (\sum_{j \in \mu \setminus i} \gamma^k) - \frac{(1+\zeta(|\mu|-1))\sum_{j \in N \setminus \mu }\gamma^j}{|N|-|\mu|} 
 \end{equation}
@@ -44,14 +51,78 @@ Again, there are two parts to the low-level objective. The first part targets to
 We do not directly solve the low-level simplified formulation, rather integrate into a MARL-based model and further simplify it into an LQNG. Therefore, in the following subsections, we discuss how the implementation of these controllers is updated to represent the updated objective of the low-level game.
 
 \subsubsection{Multi-Agent Reinforcement Learning Controller}
-We make two changes to our MARL model to reflect the changes of the low-level formulation. First, we update the reward structure to incorporate the overall team-performance calculations. We introduce a shared reward for all agents of a team using the order in which the checkpoints are passed resembling the points that are awarded to teams based on their driver's finishing positions in real-life racing. Using this shared reward mechanism connects to the second change to the MARL model, which is changing the learning algorithm used to train the control policy. We use an algorithm called posthumous counterfactual credit assignment) developed by the creators of Unity ML-Agents library \cite{poca}. Their algorithm is an extension on the counterfactual multi-agent policy gradients algorithm by modifying how team rewards impact the policy after an agent might have reached the end of its life. In our case, end of an agent's life refers to finishing the race. 
+We make two changes to our MARL model to reflect the changes of the low-level formulation. First, we update the reward structure to incorporate the overall team-performance calculations. We introduce a shared reward for all agents of a team using the order in which the checkpoints are passed resembling the points that are awarded to teams based on their driver's finishing positions in real-life racing. Using this shared reward mechanism connects to the second change to the MARL model, which is changing the learning algorithm used to train the control policy. We use an algorithm called posthumous counterfactual credit assignment) developed by the creators of Unity ML-Agents library \cite{poca}. Their algorithm is an extension on the state-of-the-art counterfactual multi-agent policy gradients algorithm \cite{coma}. In their extension, the scientists at Unity modify how team rewards impact the policy after an agent might have reached the end of its life. In our case, end of an agent's life refers to finishing the race. 
 
 \subsubsection{Linear-Quadratic Nash Game Controller}
-Updating the LQNG-based controller does not require any explicit changes to the LQNG formulation. In the original LQNG formulation, we introduced a series of multipliers $\rho$ that are multiplied with other players' distances to their upcoming waypoints in the second component of the objective \eqref{eq:lqng_obj2}. We simply flip the signs of those multipliers for the players on the ego player's team. By doing so, the player will no longer have an objective to hinder those players' progress towards their checkpoints. Instead, it will try to help them. 
+Updating the LQNG-based controller does not require any explicit changes to the LQNG formulation. In the original LQNG formulation, we introduced a series of multipliers $\rho$ that are multiplied with other players' distances to their upcoming waypoints in the second component of the objective \eqref{eq:lqng_obj2}. We simply ensure the signs of those multipliers for the players on the ego player's team is negative. By doing so, the player will no longer have an objective to hinder those players' progress towards their checkpoints; instead, it will be rewarded for selecting trajectories that aid its teammates in reaching their target waypoints. 
 
 \section{Team-based Racing Results}
-Our experiments now include 2v2 head-to-head racing on the basic oval track (which the learning-based agents were trained on) and the more complex track shown in Figure \ref{fig:experiment_tracks}. Each team is composed of two players both using one of the five types of implemented controllers, MCTS-RL, MCTS-LQNG, E2E, Fixed-LQNG, and Fixed-RL, constructing five teams. Every pair of teams competes head-to-head in 96 races on both tracks. The dynamical parameters (cornering limitations, top speed, acceleration, braking, etc.) of each player's vehicle are identical, and the players start every race at the same initial checkpoint. The only difference in their initial states is the lane in which they start. In order to maintain fairness with respect to starting closer to the optimal racing line, we rotate through every ordering of the when assigning their initial lanes.
+To study this extension, the experiments include 2v2 head-to-head racing on the basic oval track (which the learning-based agents were trained on) and the more complex track shown in Figure \ref{fig:experiment_tracks}. Each team is composed of two players both using one of the five types of implemented controllers, MCTS-RL, MCTS-LQNG, E2E, Fixed-LQNG, and Fixed-RL, constructing five teams. Every pair of teams competes head-to-head in 48 races on both tracks. The dynamical parameters (cornering limitations, top speed, acceleration, braking, etc.) of each player's vehicle are identical, and the players start every race at the same initial checkpoint. The only difference in their initial states is the lane in which they start and the initial checkpoint. Two of the players start \SI{10}{\meter} in front of the other pair resembling the starting grid of real-life racing. In order to maintain fairness with respect to starting closer to the optimal racing line or ahead of others, we rotate through each of the 6 unique ways to place each team on the 4 possible starting positions.
 
-Our experiments seek to reinforce the importance of hierarchical game-theoretic reasoning. We are also interested in observing maneuvers where teammates coordinate positioning to help pass or defend against the opposing team. We assign points to each of the four finishing positions: [10, 7.5, 6, 4], and aggregate the points at the end of the race for each team. In addition, for each team, we count the number of 1st place finishes, average collisions-at-fault per race, average illegal lane changes per race, and a safety score (a sum of the prior two metrics). Appendix \ref{app:team_results} provides tables with a complete breakdown of the results. We also provide a video\footnote{\vidurlteam} demonstrating them in action. 
+Our experiments seek to reinforce the importance of hierarchical game-theoretic reasoning and its scalability to challenging problems with strategies requiring coordination and long-term planning. We are also interested in observing maneuvers where teammates use tactical positioning to help pass or defend against the opposing team, commonly observed in expert human racing. We assign points to each of the four finishing positions, $[10, 7.5, 6, 4]$ and $0$ for not finishing the race. The points are summed at the end of the race for each team. The number of points is important because it measures the overall performance of the team rather than the individual ability of a specific controller. Nevertheless, for each team, we still count the number of wins (i.e. 1st place finishes), average collisions-at-fault per race, average illegal lane changes per race, and a safety score (a sum of the prior two metrics) to obtain a holistic view of the implemented controllers. Our analysis focuses on three key metrics: average points per race, wins, and safety score. Appendix \ref{app:team_results} provides tables with a complete breakdown of the results. We also provide a video\footnote{\vidurlteam} demonstrating them in action. 
 
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{Figures/OvalResultsNew2.pdf}
+  \caption{Results from head-to-head racing on the oval track.}
+  \label{fig:team_results_oval}
+\end{figure}
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth]{Figures/ComplexResultsNew2.pdf}
+  \caption{Results from head-to-head racing on the complex track.}
+  \label{fig:team_results_complex}
+\end{figure}
 
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|p{4cm}|l|p{3.25cm}|p{3cm}|}
+    \hline
+        \textbf{Aggregate Results (384 Total Races)} & \textbf{Wins} & \textbf{Average Points Per Race} & \textbf{Average Safety Score} \\ \hline
+        MCTS-RL & 250 & 14.83 & 1.69  \\ \hline
+        E2E & 203 & 12.83 & 1.81  \\ \hline
+        Fixed-RL & 160 & 13.12 & 2.12  \\ \hline
+        MCTS-LQR & 190 & 13.11 & 2.04  \\ \hline
+        Fixed-LQR & 157 & 13 & 1.97 \\ \hline
+    \end{tabular}
+    \caption[Aggregated team-based racing results.]{Aggregated team-based racing results across both tracks.}
+    \label{tab:team_aggr_results}
+\end{table}
+
+Based on the plots in Figure \ref{fig:team_results_oval} and Figure \ref{fig:team_results_complex} and Table \ref{tab:team_aggr_results}, we conclude the following key points:
+
+\begin{enumerate}[wide, labelindent=0pt, font=\bfseries]
+% MCTS-based variants outperformed respective baselines
+\item \textbf{The proposed game-theoretic hierarchical controllers scale to the additional challenge of team-based racing by continuing to outperform their respective baselines.} 
+
+The results amongst MCTS-RL, Fixed-RL, and E2E continues to show the effectiveness of our hierarchical structure. Again, all of MARL-based agents were trained only on the oval track, but MCTS-RL continues to lead in all of the key metrics. While MCTS-RL has more wins overall, the difference in the number of wins is not as high as the head-to-head case. However, the more important metric of interest in this study is average points per race. MCTS-RL maintains a considerable difference in terms of average points per race compared to the baselines. The higher points per race implies that even if MCTS-RL is not able to finish 1st, it collaborates more effectively to produce better results as a team. 
+
+Next, we compare just the baselines, we notice that Fixed-RL is worse in terms of wins and safety score compared to E2E. Recall that the Fixed-RL controller simply follows a fixed optimal racing line. While such a strategy might be successful in the head-to-head case where there is only one opponent to consider, in the team racing scenario, it is imperative for players to consider alternative racing lines especially if one's teammate is already following a specific line. As a result, Fixed-RL often had collisions with its own teammate as both players competed over the same racing line. In those situations, one or both of Fixed-RL teammates sometimes lost a position. However, once they were separated far enough after recovering from the collision, the Fixed-RL team could both drive fast enough to at least maintain their new positions or independently overtake its opponents, which is reflected in its higher points-per-race score compared to E2E. This pattern implies that hierarchical reasoning is important to being quick, but is not necessarily enough. To be the most successful, game-theoretic hierarchical reasoning, e.g. MCTS, needs to be used to allow teammates to predict each other's plans and work together effectively. 
+
+Lastly, we compare MCTS-LQNG and Fixed-LQNG. Both LQNG agents have similar safety scores. However, MCTS-LQNG still has 20\% more wins and a better points-per-race metric overall. Again like the head-to-head case, the main drawback with the fixed trajectory tracking agents is that they do not consider alternative racing lines. While in the head-to-head case, it might not be as important, it becomes considerably more vital to success. 
+
+% RL is better than LQNG for low-level
+\item \textbf{The performance gap between MARL and LQNG for low-level planning is smaller in the team-based racing compared head-to-head racing.}  
+
+Across both tracks, the MARL-based agents are still generally better than the LQNG-based agents in terms of our key metrics, but the difference in their performance is considerably narrowed  compared to the head-to-head case. For example, in the complex track both the LQNG-based agents have better safety scores than their MARL-based counterparts, but in the oval track it is significantly worse due to the number of illegal lane changes. Furthermore, MCTS-RL has just 30\% more wins in the team-based experiments compared to the 150\% more wins it has against MCTS-LQNG in the head-to-head experiments. For the fixed trajectory agents, this gap drops from 200\% to 0\%. Similarly, when we consider our primary metric evaluating team-based performance, points-per-race, the MCTS-RL has a greater difference than Fixed-RL does to its LQNG-based counterpart. The overall lack of performance difference between Fixed-RL and Fixed-LQNG is again attributed to its limitation of only tracking a fixed trajectory.  As discussed in analysis of the head-to-head racing, the LQNG-based controllers are conservatively tuned for collision avoidance due to their short horizons. In the team-based racing with more than one nearby players in the environment, it is even more challenging for them to plan an overtake. Although Fixed-RL can afford to be more aggressive by learning how to stay closer to other, its policy does not always know how to overtake in situations with both and opponent and teammate both close to the target trajectory. Because its target trajectory never changes according to the situation, it does not consider an alternative overtaking path. As a result, both the Fixed-RL and Fixed-LQNG agents end up racing similarly and conservatively and behave more independently than as a team.
+
+% MCTS-RL is the best overall controller.
+\item \textbf{MCTS-RL outperforms all other implemented controllers exhibiting teamwork tactics resembling real-life experts.}  
+
+ MCTS-RL has the best safety score, recorded a win rate of over 65\% of the 384 head-to-head races it participated in across both tracks, and the highest points per race. The MCTS high-level planner provided the MCTS-RL team a series of waypoints allowing it to make decisions in complex tactical situations where there is a mix of both competitive and cooperative objectives. The MARL-based low-level planner provided robustness to adapt to the true scenario that plays out. Finally, we observe this control structure executing plans that resemble those performed by expert human drivers. 
+ For example, Figure~ \ref{fig:team_mctsrl:overtake} demonstrates how the high-level planner developed a strategy to perform a pincer like maneuver to overtake an opponent. Both agents from the MCTS-RL team approached the opponent from either side of the opponent at the same time. The opponent could only defend one of the MCTS-RL team players allowing the other MCTS-RL team player to pass. In addition, MCTS-RL is also successful at executing strategic maneuvers as seen in Figure~ \ref{fig:team_mctsrl:strategy} where a player who is ahead momentarily slow down and block an opponent behind to allow for his teammate to pass the opponent. Both of these tactics resemble strategies of expert human drivers in real head-to-head racing.
+ \end{enumerate}
+ 
+ \begin{sidewaysfigure}
+  \centering
+  \includegraphics[height=0.7\textheight]{Figures/MCTSRLTeamOvertake.pdf}
+  \caption [Overtaking maneuver by team of MCTS-RL agents.] {An overtaking maneuver executed a team MCTS-RL agents (green and orange) against the Fixed-RL agent (blue) on the oval track. From $t=0$ to $t=1$, the MCTS-RL agents split and attack the Fixed-RL agent from both sides. The Fixed-RL agent attempts to defend the green MCTS-RL agent on its right allowing the orange MCTS-RL agent to overtake on its left from $t=2$ to $t=6$. The green and orange boxes along each checkpoint highlight the long-term plans calculated by the MCTS planners of each of the MCTS-RL agents, respectively.}
+  \label{fig:team_mctsrl:overtake}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}
+ \centering
+  \includegraphics[width=\textwidth]{Figures/MCTSRLTeamBlockToOvertake.pdf}
+  \caption[Block to overtake maneuver executed by team of MCTS-RL agents.]{A tactical maneuver executed by the MCTS-RL team (green and orange) against an E2E agent (blue) on the complex track.  Before reaching the turn, the green MCTS-RL's high-level planner calculates a trajectory suggesting to switch lanes to the left for first part of the upcoming straight and block the E2E agent forcing it to slow down and evade further to the left of the track ($t=0$ to $t=3$). This blocking move allows the orange MCTS-RL to plan to take advantage of the opponent's disruption and quickly switch to the right for the inside line of the upcoming turn ( $t=3$ to $t=5$). Eventually, the orange MCTS-RL agent completes the overtake by $t=9$. The green and orange boxes along each checkpoint highlight the long-term plan calculated by MCTS planners of each of the MCTS-RL agents, respectively.}
+  \label{fig:team_mctsrl:strategy}
+\end{sidewaysfigure}
