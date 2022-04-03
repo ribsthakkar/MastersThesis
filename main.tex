@@ -207,9 +207,14 @@
 % Do NOT use \begin{abstract} ... \end{abstract}.
 %
 \utabstract
-\include{abstract}
-\indent
+\indent 
+This report develops a hierarchical control scheme for autonomous racing with realistic safety and fairness rules. The first part constructs a discrete game approximation with simplified dynamics where the rules are outlined as temporal logic specifications. Using the discrete representation, a model checking tool is used to synthesize an optimal strategy in the form of a series of target waypoints. This model is applied to several case studies of common racing scenarios, and its resulting strategies are qualitatively verified against those executed by racing experts. This formulation is used as the high-level planner in the hierarchical controller but is solved using Monte Carlo tree search (MCTS) to run in real time.
 
+In the next part, the high-level planner is integrated with a low-level controller to track the target waypoints. Two low-level approaches are considered including multi-agent reinforcement learning (MARL) methods and a linear-quadratic Nash game (LQNG) formulation producing two hierarchical controllers MCTS-RL and MCTS-LQNG, respectively. The hierarchical agents are tested against three baselines: an end-to-end MARL controller, a MARL controller tracking the optimal racing line, and an LQNG controller tracking the optimal racing line. The controllers compete head-to-head on an oval track and a complex track where the number of wins and a safety score representing the number of rule violations are counted. The hierarchical controllers outperform their respective baseline methods in terms of wins. The MCTS-RL controller outperforms all of the other controllers in terms of both metrics and executes maneuvers resembling those seen in real-life racing.
+
+In the final part, the hierarchical controllers are extended to team-based racing where there is a mix of competitive and cooperative objectives. The formulations are generalized to consider these challenging objectives while still required to adhere to the complex rules. The same set of controllers and baselines compete in races as a pair of controllers of the same type competing against another homogeneous pair. In addition to the number of wins and safety score, the overall team performance is also measured by allocating points based on finishing position. Again, the hierarchical agents outperform their baselines in terms of wins, but they also have higher number of points per race indicating greater success as a team. Finally, MCTS-RL continues to outperform all of the implemented controllers and displays tactics performed by expert human drivers.
+
+We show that hierarchical planning for game-theoretic reasoning produces competitive behavior even when challenged with complex objectives, rules, and constraints.
 
 
 \tableofcontents   % Table of Contents will be automatically
