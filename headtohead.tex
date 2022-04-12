@@ -2,6 +2,7 @@
 % \epigraph{\flushright The Turn}{}
 \epigraph{\flushright The second act is called ``The~ Turn.'' The magician takes the ordinary something and makes it do something extraordinary.}{Christopher Priest, \textit{The Prestige}}
 \label{chapter:hier}
+In this chapter, we construct our complete hierarchical controller. We explain how the discretized model from the previous chapter is used as the high-level planner and introduce two variants to serve as low-level planners. We finish the chapter by evaluating our hierarchical control variants against baseline methods representing prior works in head-to-head race simulations.
 \section{Hierarchical Control Design}
 % \begin{figure}
 %   \centering
@@ -139,6 +140,13 @@ On the other hand, the agent is penalized for actions that would violate the con
 
 The rewards capture our low-level formulation objective \eqref{eq:ll_obj} to pass as many checkpoints as possible while closely hitting the lane and velocity targets \eqref{eq:ll_wp_err}. The penalties capture the on-track \eqref{eq:ll_pos_dist} and collision avoidance \eqref{eq:ll_coll_avoid} constraints. Note that the penalties reintroduce the original safety and fairness from the original general game that were simplified away from the low-level formulation \eqref{eq:gen_coll_avoid} and \eqref{eq:gen_lane_lim}. Because these rules are inherently met by satisfying the objective of reaching the high-level planner's waypoints, their penalties have the weights set to have a lower impact than other components of the reward structure. We also justify incorporating the original form of these penalties because learning-based methods provide the freedom to easily encode these rules. Moreover, we are robustifying the low-level agent against the possibility that the ego player might be forced to deviate far away from the high-level plan in extreme circumstances.
 
+\begin{figure}
+  \centering
+  \includegraphics[height=0.5\textwidth, angle=270]{Figures/AgentLidar.png}
+  \caption[LIDAR observations of MARL-based agents.] {A bird's eye view of the LIDAR measurements captured as part of the MARL controller's observation structure.}
+  \label{fig:lidar}
+\end{figure}
+
 The observation structure of the MARL controller captures the assumption of perfect information we have in all of our game formulations. Therefore, the observation structure consists of the following elements:
 \begin{itemize}
     \item Perfect state information of one's own state and all other player states:
@@ -157,6 +165,7 @@ The observation structure of the MARL controller captures the assumption of perf
     \item Local LIDAR distance observations spaced over a 180\textdegree{} field of view centered in the direction that the player is facing. Figure \ref{fig:lidar} displays the LIDAR rays captured by the MARL agents in our implementation.
     \item Locations and target velocities of upcoming $k$ waypoints, $\psi^i_{r^i_{1}}, ..., \, \psi^i_{r^i_{1} + k}$, in the local coordinate frame. 
 \end{itemize}
+
 
 \subsubsection{Linear-Quadratic Nash Game Controller}
 % Linear approximation of the waypoint following game
@@ -216,7 +225,7 @@ v^j_{t} \\
 	e^j_t \\
 	\end{bmatrix}
 \end{multline}
-
+We use linear time invariant dynamics for the purpose of simplicity. It is possible to estimate future states by interpolating high-level plan to produce time varying dynamics. However, situations may arise where a player is not near the interpolated trajectory that would require the interpolation calculations to be robust to such situations. In addition, the low-level planner runs at high frequencies, so we assume the dynamics should hold at the short horizon for which the calculations are performed.  
 \subsection{Summary of Control Structure}
 Algorithm \ref{alg:control_loop} outlines the main control loop of the controller. The control loop is executed at a frequency greater than or equal to that of low-level planner. Because the rate of the high-level plan is lower than the rate of the main control loop, we just construct the initial game states and run the MCTS calculations on a background thread, asynchronously updating the target waypoints after the calculations are complete. For the low-level calculations, parallelism is not necessary because they are fast enough to meet the deadline of the main control loop. 
 
@@ -268,7 +277,7 @@ The fixed trajectory MARL controller, referred to as ``Fixed-RL," is a learning-
 % Implemented in Unity, used ML-Agents library for RL training
 Our controllers are implemented\footnote{\codeurl} in the Unity Game Engine. Screenshots of the simulation environment are shown in Figure \ref{fig:experiment_tracks}. We extend the Karting Microgame template provided by Unity \cite{microkarting} to model our vehicles and racing environments. 
 
-The kart physics from the template utilize Unity's built-in Rigidbody physics engine by simply updating the kart's velocity and yaw-rate at each control step using the acceleration and steering angle as inputs. However, to incorporate cornering limitations and tire wear modeling we modify the calculations. Tire wear proportion $e$ is modeled as an exponential decay curve that is a function of the accumulated angular velocity endured by the kart. This model captures the concept of losing grip as the tire is subjected to increased lateral loads. 
+The kart physics from the template utilize Unity's built-in physics engine by simply updating the kart's velocity and yaw-rate at each control step using the acceleration and steering angle as inputs. However, to incorporate cornering limitations and tire wear modeling we modify the calculations. Tire wear proportion $e$ is modeled as an exponential decay curve that is a function of the accumulated angular velocity endured by the kart. This model captures the concept of losing grip as the tire is subjected to increased lateral loads. 
 
 The velocity update of the kart is clamped between 0 and $\min(v_*, v_{\text{max}})$ where $v_{\text{max}}$ is the kart's maximum allowed top speed from the fixed parameters of the kart and $v_*$ is the maximum allowed velocity based on the kart's evolved state and turning radius. The calculation for $v_*$ is used in Section \ref{section:discdyn} of the discrete game formulation to approximate feasibility of certain actions depending on the shape of the track. It is calculated by first linearly interpolating the minimum lateral acceleration $a_{\text{max}}$ and maximum lateral acceleration $a_{\text{max}}$ by the proportion of tire wear $e$ to compute the maximum allowed lateral acceleration for the kart $a_*$. Then $a_*$ is used with turning radius of the vehicle $r$ and standard formulas of circular motion to compute $v_*$. The calculations are summarized by the following pair of equations:
 \begin{equation}
@@ -291,53 +300,55 @@ Multi-agent support is also added to the template in order to race the various a
 % Two Tracks, 50 races head to head each
 Our experiments include head-to-head racing on a basic oval track (which the learning-based agents were trained on) and a more complex track shown in Figure \ref{fig:experiment_tracks}. Specifically, the complex track involves challenging track geometry with turns whose radii change along the curve, tight U-turns, and turns in both directions. To be successful, the optimal racing strategy requires some understanding of the shape of the track along a sequence of multiple turns. Every pair of controllers competes head-to-head in 50 races on both tracks. The dynamical parameters (cornering limitations, top speed, acceleration, braking, etc.) of each player's vehicle are identical, and the players start every race at the same initial checkpoint with the same initial tire wear of 20\%. The only difference in their initial states is the lane in which they start. In order to maintain fairness with respect to starting closer to the optimal racing line, we alternate the starting lanes between each race for the players.
 
-Our experiments primarily seek to identify the importance of hierarchical game-theoretic reasoning and the strength of MCTS as a high-level planner for racing games. We count the number of wins against each opponent, average collisions-at-fault per race, average illegal lane changes per race, and a safety score (a sum of the prior two metrics) for the controllers. Appendix \ref{app:hier_results} provides a complete breakdown of all of the head-to-head results. We also provide a video\footnote{\vidurl} demonstrating our controllers in action. 
-
-\begin{table}
-    \centering
-    \begin{tabular}{|p{4cm}|l|l|}
-    \hline
-        \textbf{Aggregate Results (400 Total Races)} & \textbf{Wins} & \textbf{Average Safety Score} \\ \hline
-        MCTS-RL & 333 & 0.91 \\ \hline
-        E2E & 201 & 1.98 \\ \hline
-        Fixed-RL & 238 & 0.93  \\ \hline
-        MCTS-LQR & 119 & 1.89 \\ \hline
-        Fixed-LQR & 97 & 0.79 \\ \hline
-    \end{tabular}
-    \caption[Aggregated head-to-head racing results.]{Aggregated head-to-head racing results across both tracks.}
-    \label{tab:aggr_results}
-\end{table}
+Our experiments primarily seek to identify the importance of hierarchical game-theoretic reasoning and the strength of MCTS as a high-level planner for racing games. We count the number of wins against each opponent, average collisions-at-fault per race, average illegal lane changes per race, and a safety score (a sum of the prior two metrics) for the controllers. Appendix \ref{app:hier_results} provides a complete breakdown of all of the head-to-head results for every pair of agents. We also provide a video\footnote{\vidurl} demonstrating our controllers in action. 
 
 \begin{figure}
   \centering
-  \includegraphics[width=\textwidth]{Figures/HeadOvalResults.pdf}
+  \includegraphics[width=\textwidth]{Figures/HeadOvalResultsFinal.pdf}
   \caption{Results from head-to-head racing on the oval track.}
   \label{fig:results_oval}
 \end{figure}
 
 \begin{figure}
 \centering
-  \includegraphics[width=\textwidth]{Figures/HeadComplexResults.pdf}
+  \includegraphics[width=\textwidth]{Figures/HeadComplexResultsFinal.pdf}
   \caption{Results from head-to-head racing on the complex track.}
   \label{fig:results_complex}
 \end{figure}
-\FloatBarrier
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|p{4cm}|l|l|}
+    \hline
+        \textbf{Aggregate Results (400 Total Races)} & \textbf{Wins} & \textbf{Average Safety Score} \\ \hline
+        MCTS-RL & 363 & 0.805 \\ \hline
+        E2E & 141 & 3.23 \\ \hline
+        Fixed-RL & 203 & 1.35  \\ \hline
+        MCTS-LQR & 201 & 1.80 \\ \hline
+        Fixed-LQR & 83 & 0.542 \\ \hline
+    \end{tabular}
+    \caption[Aggregated head-to-head racing results.]{Aggregated head-to-head racing results across both tracks.}
+    \label{tab:aggr_results}
+\end{table}
+% \FloatBarrier
 Based on the plots in Figure \ref{fig:results_oval} and Figure \ref{fig:results_complex} and Table \ref{tab:aggr_results}, we conclude the following key points:
 
 \begin{enumerate}[wide, labelindent=0pt, font=\bfseries]
 % MCTS-based variants outperformed respective baselines
 \item \textbf{The proposed hierarchical variants outperformed their respective baselines.} 
 
-The results amongst MCTS-RL, Fixed-RL, and E2E show the effectiveness of our hierarchical structure. While all three of the MARL-based agents were only trained on the oval track, the MCTS-RL agent won the most head-to-head races by compared to two baselines despite being trained with the same environment. Furtheromore, MCTS-RL's safety score is significantly better than E2E's safety score and practically the same as Fixed-RL's safety score. Comparing the baselines against each other, Fixed-RL also has more wins than E2E aggregated across both tracks. This result indicates that some type of hierarchical structure is favorable. It suggests that a straightforward task of trajectory tracking is easier to learn and more effectively generalized for a deep neural network than having to learn both strategic planning and respect for the safety and fairness rules. Specifically, while learning collision avoidance was reasonably captured by all of the MARL-based agents, E2E struggled with learning the illegal lane changes rule. On the other hand, the hierarchical structured agents did not have to focus on learning such a complex rule because they rely on a provided trajectory that is assumed to follow the lane changing rules.
+The results amongst MCTS-RL, Fixed-RL, and E2E show the effectiveness of our hierarchical structure. While all three of the MARL-based agents were only trained on the oval track, the MCTS-RL agent won the most head-to-head races across both tracks compared to two baselines despite being trained with the same environment. Furthermore, MCTS-RL's safety score is significantly better than both of E2E's and Fixed-RL's safety scores. Comparing the baselines against each other, Fixed-RL also has more wins than E2E aggregated across both tracks. This result indicates that some type of hierarchical structure is favorable. It suggests that a straightforward task of trajectory tracking is easier to learn and more effectively generalized for a deep neural network than having to learn both strategic planning and respect for the safety and fairness rules. Specifically, while learning collision avoidance was reasonably captured by all of the MARL-based agents, E2E struggled with learning the illegal lane changes rule. On the other hand, the hierarchical structured agents did not have to focus on learning such a complex rule because they rely on a provided trajectory that is assumed to follow the lane changing rules. However, while a hierarchical structure will help with safety, it is not enough to always win. One must consider multiple trajectories to be able to overtake and defend against opponents as MCTS-RL does unlike Fixed-RL.
 
-Next, we compare MCTS-LQNG and Fixed-LQNG. Although MCTS-LQNG has a worse overall safety score, it has 25\% more wins when aggregated over both tracks. Furthermore, the main difference in their safety score is attributed to the fact that MCTS-LQNG considers multiple trajectories whereas Fixed-LQNG only follows a fixed trajectory that does not involve changing lanes often. Therefore, it is rare for Fixed-LQNG to break the lane changing rule. When just comparing their collision-at-fault counts, they are similar. Although on the oval track Fixed-LQNG has more wins against the MARL-based agents, when the racetrack gets more complicated, Fixed-LQNG quickly becomes inferior. The oval track has just one main racing line. However, there are many feasible racing lines in the complex track to consider in order to be competitive. MCTS-LQNG accounts for these trajectories by using the high-level MCTS planner and is therefore more successful in its races against MARL-based agents on the complex track with twice as many wins against them compared to the Fixed-LQNG agent. MCTS-LQNG considered trajectories that could result in overtakes when opponents made mistakes from any part of the track. On the other hand, Fixed-LQNG was forced to rely on opponents making mistakes that were not along its fixed trajectory to make overtakes. 
+Next, we compare MCTS-LQNG and Fixed-LQNG. Although MCTS-LQNG has a worse overall safety score, it has 25\% more wins when aggregated over both tracks. Furthermore, the main difference in their safety score is attributed to the fact that MCTS-LQNG considers multiple trajectories whereas Fixed-LQNG only follows a fixed trajectory that does not involve changing lanes often. Therefore, it is rare for Fixed-LQNG to break the lane changing rule. When just comparing their collision-at-fault counts, they are similar. Although on the oval track, Fixed-LQNG have a similar number of overall wins, when the racetrack is more complicated, Fixed-LQNG quickly becomes inferior. The oval track has just one main racing line, but there are many reasonable racing lines in the complex track that must be considered to be competitive. MCTS-LQNG accounts for these trajectories by using the high-level MCTS planner and is therefore more successful in its races against MARL-based agents on the complex track with quadruple the number of wins against them compared to the Fixed-LQNG agent. MCTS-LQNG considered trajectories that could result in overtakes when opponents made mistakes from any part of the track. On the other hand, Fixed-LQNG was forced to rely on opponents making mistakes that were not along its fixed trajectory to make overtakes. 
 
 % RL is better than LQNG for low-level
 \item \textbf{MARL is more successful and robust than LQNG as a low-level planner.}  
 
-Overall, the MARL-based agents outperformed their LQNG-based counterparts in terms of both key metrics: wins and safety scores. However, this result is likely due to the heuristic simplifications in our LQNG design. Vehicle dynamics are only linearized around the initial state of each agent and are time-invariant, meaning the linear approximation is only valid for a very short time horizon. Therefore, the LQNG-based agents could only rely on braking/acceleration instead of yaw-rate to avoid collisions. As a result, the weights in the objective of the LQNG formulation are set conservatively to emphasize avoiding collisions. This setup also implies that LQNG-based agents often concede in close battles and thereby lose races because of the high cost in the planning objective of driving near another player even if there is no collision. Due to these properties, most of their races were decided over the first few turns of the race. If the LQNG-based agent was able to find itself ahead after the first several turns, then it usually built a considerable lead, especially Fixed-LQNG, that its opponents could not catch because the controller is very effective at tracking any trajectory with no obstacles. However, more often, it would fall behind or collide with an opponent at the start of the races causing it to lose speed. Once it fell behind, it could catch up to its opponents, but it could not successfully overtake unless the opponents made significant mistakes allowing it to pass with a considerable safety margin. If the dynamics were linearized over the state at each timestep $t$ instead of just the initial state at $t_0$, we could use a larger time horizon and expect better performance for the LQNG-based agent. 
+Overall, the MARL-based agents outperformed their LQNG-based counterparts in terms of both key metrics, wins and safety scores. However, this result is likely due to the heuristic simplifications in our LQNG design. Vehicle dynamics are only linearized around the initial state of each agent and are time-invariant, meaning the linear approximation is only valid for a very short time horizon. Therefore, the LQNG-based agents could only rely on braking/acceleration instead of yaw-rate to avoid collisions. As a result, the weights in the objective of the LQNG formulation are set conservatively to emphasize avoiding collisions. This setup also implies that LQNG-based agents often concede in close battles and thereby lose races because of the high cost in the planning objective of driving near another player even if there is no collision. 
 
-While Fixed-RL and Fixed-LQNG have similar safety scores, MCTS-RL has a significantly better safety score than MCTS-LQNG. This difference primarily arises from increased illegal lane changes by the LQNG-based counterpart. The high-level planner runs in parallel with the low-level and at a lower frequency. As a result, the calculated high-level plan is sometimes delayed and does not account that the low-level controllers have already made choices that might contradict the initial steps in the plan. This mismatch causes the LQNG-based controller to more often break the lane changing rules by swerving across the track to immediately follow the high-level plan when it is updated. The MARL-based agents are more robust to this situation because they have those safety rules encoded in their reward structures, albeit with smaller weights. 
+Due to these properties, most of their races were decided over the first few turns of the race. If the LQNG-based agent was able to find itself ahead after the first several turns, then it usually built a considerable lead, especially Fixed-LQNG. Its opponents could not close this lead because the LQNG controller is very effective at tracking a trajectory with no obstacles. However, more often, the LQNG-based agent would fall behind or collide with an opponent at the start of the races causing it to lose speed. Once it fell behind, it could catch up to its opponents, but it could not successfully overtake unless the opponents made significant mistakes allowing it to pass with a considerable safety margin. As a result, the LQNG-based agents generally resulted in fewer wins compared to their RL-based counterparts. If the dynamics were linearized over the state at each timestep $t$ instead of just the initial state at $t_0$, we could use a larger time horizon and expect better performance for the LQNG-based agent. 
+
+While Fixed-LQNG has a better safety score than Fixed-RL, MCTS-RL has a significantly better safety score than MCTS-LQNG. Just in terms of collision avoidance, both RL-based agents have worse numbers because the LQNG-based agents are tuned to be conservative. However, MCTS-LQNG significantly increased illegal lane changes per race compared to MCTS-RL while Fixed-LQNG has slightly fewer illegal lane changes per race compared to Fixed-RL. As a discussed previously, the fixed trajectory agents do not consider alternative racing lines, so they rarely break the lane changing limit rule in the first place. In the MCTS case, the high-level planner runs in parallel with the low-level and at a lower frequency. As a result, the calculated high-level plan uses slightly out of date information and does not account that the low-level controllers have already made choices that might contradict the initial steps in the plan. This mismatch causes the LQNG-based controller to more often break the lane changing rules by swerving across the track to immediately follow the high-level plan when it is updated. The MCTS-RL is more robust to this situation because they have those safety rules encoded in their reward structures, albeit with smaller weights. They do not track the waypoints exactly and learn to smooth the trajectory produced by the high-level plan and the live situation in the game.
 
 % MCTS-RL is the best overall controller.
 \item \textbf{MCTS-RL outperforms all other implemented controllers.}  

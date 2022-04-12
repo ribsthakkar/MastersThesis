@@ -1,12 +1,12 @@
-\chapter{Synthesis of Verifiably Safe and Optimal Racing Maneuvers using Temporal Logic Specifications}
+\chapter{Synthesis of Verifiably Safe and Optimal Racing Maneuvers}
 % \epigraph{\flushright The Pledge}{}
 \epigraph{\flushright The first part is called ``The~ Pledge.'' The magician shows you something ordinary\ldots he asks you to inspect it to see if it is indeed real, unaltered, normal. But of course\ldots it probably isn't.}{Christopher Priest, \textit{The Prestige}}
 \label{chapter:synthesis}
-\section{General Multi-Agent Racing Game Formulation} \label{section:genform}
-To motivate our discretized game approximation, we begin by outlining a general multi-agent racing game formulation involving rules seen in real-life racing. 
+In this chapter, we develop a discrete model of an autonomous racing game. To motivate our discretized game approximation, we begin by outlining a general multi-agent racing game formulation involving rules seen in real-life racing. Then, we transform the general formulation to a discrete formulation treating the rules as temporal logic specifications, so we can synthesize strategies using model checking methods. Lastly, the discrete formulation is applied to several race scenarios where the resulting strategies are compared to those seen in real-life.
 
+\section{General Multi-Agent Racing Game Formulation} \label{section:genform}
 % Table \ref{tab:gen_symbols} lists all of the variables and functions referenced in the formulation. 
-Let there be a set, $N$, of players racing over $T$ steps in $\mathcal{T} = \{1, ..., T\}$. There is a track defined by a sequence of $\tau$ checkpoints along the center, $\{c_i\}_{i=1}^{\tau}$, whose indices are in a set $C=\{1,..., \tau\}$. The objective for each player $i$ is to minimize its pairwise differences of the time to reach the final checkpoint with all other players. In effect, the player targets to reach the finish line with the largest time advantage. The continuous state (such as position, speed, or tire wear) for each player, denoted as $x^i_t \in X \subseteq \mathbb{R}^n$, and control, denoted as $u^i_t \in U \subseteq \mathbb{R}^k$, are governed by known dynamics $f^i$. We also introduce a pair of discrete state variables $r^i_t \in C$ and $\gamma^i \in \mathcal{T}$. The index of the latest checkpoint passed by player $i$ at time $t$ is $r^i_t$, and it is computed by function $p: X\rightarrow C$. The earliest time when player $i$ reaches $c_\tau$ is $\gamma^i$. Using these definitions, we formulate the objective \eqref{eq:gen_obj} and core dynamics \eqref{eq:gen_dyn}-\eqref{eq:gen_goal_time} of the game as follows:
+Let there be a set, $N$, of players racing over $T$ steps in $\mathcal{T} = \{1, ..., T\}$. There is a track defined by a sequence of $\tau$ checkpoints along the center, $\{c_i\}_{i=1}^{\tau}$, whose indices are in a set $C=\{1,..., \tau\}$. The objective for each player $i$ is to minimize its pairwise differences of the time to reach the final checkpoint with all other players. In effect, a player targets to reach the finish line with the largest time advantage with respect to all of the other players. The continuous state (such as position, speed, or tire wear) for each player, denoted by $x^i_t \in X \subseteq \mathbb{R}^n$, and control, denoted by $u^i_t \in U \subseteq \mathbb{R}^k$, are governed by known dynamics $f^i$. We also introduce a pair of discrete state variables $r^i_t \in C$ and $\gamma^i \in \mathcal{T}$. The index of the latest checkpoint passed by player $i$ at time $t$ is $r^i_t$, and it is computed by function $p: X\rightarrow C$. This state variable effectively represents a player's progress along the race. The time when player $i$ reaches $c_\tau$, i.e. the final checkpoint, is $\gamma^i$. Using these definitions, we formulate the objective \eqref{eq:gen_obj} and core dynamics \eqref{eq:gen_dyn}-\eqref{eq:gen_goal_time} of the game as follows:
 
 \begin{equation} \label{eq:gen_obj}
     \min_{u^i_0, ..., u^i_T} (|N|-1)\gamma^i - \sum^N_{j \neq i}\gamma^j \\
@@ -27,7 +27,7 @@ Let there be a set, $N$, of players racing over $T$ steps in $\mathcal{T} = \{1,
 \begin{equation} \label{eq:gen_goal_time}
     \gamma^j = \min \{t \, | \, r^i_t = \tau \wedge t \in \mathcal{T} \}, \quad \forall \;\; j \in N
 \end{equation}
-
+    
 In addition to the core dynamics of the game, there are rules that govern the players' states. To ensure that the players stay within the bounds of the track we introduce a function, $q: X \rightarrow \mathbb{R}$, which computes a player's distance to the closest point on the center line. This distance must be limited to the width of the track $w$. Therefore, for all $t \in \mathcal{T}$ and $j \in N$:
 \begin{equation} \label{eq:gen_idx_dist}
     q(x^j_{t}) \leq w
@@ -35,7 +35,7 @@ In addition to the core dynamics of the game, there are rules that govern the pl
 
 Next, we define the collision avoidance rules of the game. We use an indicator function that evaluates if player $i$ is ``behind" player $j$. Depending on the condition, the distance between every pair of players, computed by function the $D: X \rightarrow \mathbb{R}$, is required to be at least $s_1$ if player $i$ is behind another player $j$ or $s_0$ otherwise. Moreover, because following players have a greater collision avoidance responsibility than leading players, $s_1 \geq s_0$. For all $t \in \mathcal{T}$, $j \in N$, and $k \in N \setminus \{j\}$ these rules are expressed by the constraint:
 \begin{equation} \label{eq:gen_coll_avoid}
-    D(x^j_{t}, x^k_t) \geq  \begin{cases} s_1 & \mathds{1}_{\text{player} \, i \, \text{behind player}\,j} \\
+    D(x^j_{t}, x^k_t) \geq  \begin{cases} s_1 & \text{player} \, i \, \text{behind player}\,j \\
     s_0 & \text{otherwise}  \end{cases}
 \end{equation}
 
@@ -138,27 +138,23 @@ where $k$ is the index of the state and the checkpoint associated with the state
 Given discrete states of the players, we outline our abstraction of the dynamics, i.e. transitions between discrete states in the game. Because the discrete game is indexed by track checkpoint, we must also transform the players' control inputs. At each checkpoint, the players' choices are now the lane ID and target velocity bucket for the upcoming checkpoint. Next, we rewrite the constraints related to the racing rules in the original formulation as temporal logic specifications. We then discuss the specifics of how our state transitions are computed based on a given action and finish with describing the turn-based mechanism of the discrete formulation.
 
 \subsubsection{Temporal Logic Specifications of Rules} 
-Constraints regarding the rules of racing for player $i$ in the original transformation are now expressed as temporal logic specifications over the discretized state transformation:
+Constraints regarding the rules of racing in the original transformation are now expressed as temporal logic specifications over the discretized state transformation for some player $i$ as follows:
+\begin{equation} \label{eq:discspec1}
+\square \;  (a^i_k \in \{1, ..., \lambda\})
+\end{equation}
+\begin{equation} \label{eq:discspec2}
+    \square \;  ( \bigwedge_{j \in N \setminus i} (k^i=k^j \wedge a^i_k=a^j_k) \implies |t^i_k-t^j_k| \geq \mu))
+\end{equation}
+\begin{equation} \label{eq:discspec3}
+    \square \; ((k \in \mathcal{S})  \implies (l^i_k \leq   L \; U \; k \notin \mathcal{S}))
+\end{equation}
+Specification \eqref{eq:discspec1} models constraint \eqref{eq:gen_idx_dist} requiring players to stay on track by ensuring that the lane ID is within a set of positive lane IDs. Specification \eqref{eq:discspec2} represents constraint \eqref{eq:gen_coll_avoid} requiring players to avoid collisions. To abstract the concept of collision avoidance in the discrete space, we require that players must always maintain a minimum time difference of $\mu$ if two players share the same lane ID at the same checkpoint. We assume that if there is a small time difference between the players at the same checkpoint and the same lane, there would be an increased risk of collision. Lastly, specification \eqref{eq:discspec3} refers to the constraint \eqref{eq:gen_lane_lim} requiring players to limit their lane changing while on a straight. The specification ensures that ``recent" lane changes variable does not exceed $L$ if checkpoint index $k$ is a straight part of the track represented by set $\mathcal{S}$ defined in the original formulation.
 
-\begin{enumerate}
-    \item Stay on track \eqref{eq:gen_idx_dist}. To require that players stay on track we must ensure that the lane ID is within the subset of non-negative lane IDs.
-    \begin{itemize}
-        \item $\square \;  (a^i_k \in \{1, ..., \lambda\})$
-    \end{itemize} 
-    \item Avoid collisions \eqref{eq:gen_coll_avoid}. To abstract collisions, we require that players must always maintain a minimum time difference of $\mu$ if two players share the same lane ID at the same checkpoint. We assume that if there is a small time difference between the players at the same checkpoint and the same lane, there would be an increased risk of collision.
-    \begin{itemize}
-        \item $\square \;  ( \bigwedge_{j \in N \setminus i} (k^i=k^j \wedge a^i_k=a^j_k) \implies |t^i_k-t^j_k| \geq \mu))$
-    \end{itemize}
-    \item Limit lane changing on straights \eqref{eq:gen_lane_lim}. Ensure the ``recent" lane changes variable does not exceed $L$ if checkpoint index $k$ is a straight part of the track as represented by set $\mathcal{S}$ defined in the original formulation.
-    \begin{itemize}
-        \item $\square \; ((k \in \mathcal{S})  \implies (l^i_k \leq   L \; U \; k \notin \mathcal{S}))$
-    \end{itemize} 
-\end{enumerate}
-The overall specification for each of the players is the conjunction of the list. Given our state discretization and action set, we could use synthesis methods to produce a controller to meet the specifications for some objective. However, the computational complexity of synthesizing a controller to meet such specifications is not manageable due to the exponential growth with respect to the number of specifications and variables \cite{Chen2013}. Therefore, we take advantage of the fact that most of these specifications are easily verified by simply examining a player's resulting state from a given state-action pair and that specification 1 is trivially satisfied by our state and action space abstraction (players are not allowed to choose target lanes outside of $\{1, ..., \lambda\}$). When constructing the model of the game, we simply disregard any player choice that violates the specifications thereby only considering states and trajectories that are allowed. 
+The overall specification for each of the players is the conjunction of the three. Given our state discretization and action set, we could use synthesis methods to produce a controller to meet the specifications for some objective. However, the computational complexity of synthesizing a controller to meet such specifications is not manageable due to the exponential growth with respect to the number of specifications and variables \cite{Chen2013}. Therefore, we take advantage of the fact that most of these specifications are easily verified by simply examining a player's resulting state from a given state-action pair and that specification \eqref{eq:discspec1} is trivially satisfied by our state and action space abstraction (players are not allowed to choose target lanes outside of $\{1, ..., \lambda\}$). When constructing the model of the game, we simply disregard any player choice that violates the specifications thereby only considering states and trajectories that are allowed. 
 \subsubsection{Computing State Transitions}
-To check if a state-action pair satisfies the temporal logic specifications and the reasonably approximates vehicle dynamics, we must have a straightforward way of computing the resulting state variables when applying some action. 
+To check if a state-action pair satisfies the temporal logic specifications and reasonably approximates vehicle dynamics, we must have a straightforward way of computing the resulting state variables when applying some action. 
 
-Updating the lane ID and velocity states is trivial because it is the exactly the player's action. Similarly, updating the ``recent" lane changes variable is also simple with our state space design. We directly apply the logic from the original formulation \eqref{eq:gen_lane_var}. It only requires evaluating whether the track type classification of the pair of checkpoints is the same and if the choice of lane ID is different than the lane ID at the initial checkpoint. Therefore, if choosing an action implies that lane change limit $L$ is exceeded on the straight checkpoints, the action would be disregarded in model to satisfy specification 3. 
+Updating the lane ID and velocity states is trivial because it is the exactly the player's action. Similarly, updating the ``recent" lane changes variable is also simple with our state space design. We directly apply the logic from the original formulation \eqref{eq:gen_lane_var}. It only requires evaluating whether the track type classification of the pair of checkpoints is the same and if the choice of lane ID is different than the lane ID at the initial checkpoint. Therefore, if choosing an action implies that lane change limit $L$ is exceeded on the straight checkpoints, the action would be disregarded in model to satisfy specification \eqref{eq:discspec3}. 
 
 To calculate updates for the elapsed time state, we first use the known track parameters (such as turning radius or lane width) to estimate the distance to travel between the lane in the current checkpoint $c_k$ to the lane in the subsequent checkpoint $c_{k+1}$. If the track between two checkpoints is a straight, the Euclidian is used to estimate the distance to travel based on the lane width ($w_l$) and the distance between the location of the checkpoints $\gamma_{k, k+1}$. If the the track between the two checkpoints is a curve, then we calculate a coarse estimate of the distance by averaging the radius of the turn for player's lane at the initial checkpoint $r_k$ and radius of the turn for the player's target lane at next checkpoint $r_{k+1}$ and multiply it by the central angle of the turn $\theta_k$. These calculations are summarized below:
 
@@ -186,7 +182,7 @@ Given the estimated distance $d$, average velocity of bucket at the initial chec
     \end{cases}
 \end{equation}
 
-The calculation simply assumes the player accelerates or brakes to reach $v_*$ from $\bar{v}_k$, maintains that speed for as long as possible until the player must brake to hit $\bar{v}_{k+1}$ if $\bar{v}_{k+1} \neq v_*$. If there is not enough distance to perform this maneuver and $\bar{v}_k \leq v_*$, we calculate the highest velocity the player can hit given we must end at the target velocity within the specified distance. All other possible maneuvers would violate the dynamical limitations of the vehicle and are ruled out of the allowed actions. We also use the time state update to estimate collision avoidance and satisfy specification 2. If a player chooses a lane that a prior player has already selected for its turn and the difference in the time states for these players would be smaller than $\mu$ if the action is applied, then the action is disregarded.
+The calculation assumes the player accelerates or brakes to reach $v_*$ from $\bar{v}_k$, maintains that speed for as long as possible until the player must brake to hit $\bar{v}_{k+1}$ if $\bar{v}_{k+1} \neq v_*$. If there is not enough distance to perform this maneuver and $\bar{v}_k \leq v_*$, we calculate the highest velocity the player can hit given we must end at the target velocity within the specified distance. All other possible maneuvers would violate the dynamical limitations of the vehicle and are ruled out of the allowed actions. We also use the time state update to estimate collision avoidance and satisfy specification \eqref{eq:discspec2}. If a player chooses a lane that a prior player has already selected for its turn and the difference in the time states for these players would be smaller than $\mu$ if the action is applied, then the action is disregarded.
 
 Finally, in order to calculate the tire wear state update, we consider the straight and curve differently. If the track between the checkpoints is a straight, we multiply a tire wear factor parameter $L_{\text{straight}}$ for a straight with the distance of the straight $d$. When the track between the checkpoints is a curve, we multiply the tire wear factor parameter $L_{\text{curve}}$, the distance of the curve $d$, and an estimate for the average lateral acceleration achieved by hitting the target velocity $\bar{v}_{k+1}$ calculated using equations of circular motion. The tire wear update $\delta e_k$ is calculated as follows:
 \begin{equation}
@@ -200,7 +196,7 @@ For both the time and tire wear, the updates are added to the initial state and 
 Using these calculations, we have a way of computing the exact sequence of states given a sequence of player actions. Next, we discuss the final piece of our discrete game's dynamics by outlining the logic behind determining the order in which the players choose actions. 
 
 \subsubsection{Turn-Based Mechanics}
-Although players make decisions concurrently in the original game and real-life, our discrete abstraction is a modeled as a turn-based game. Because the states are indexed by the checkpoint instead of time, the game is played by evaluating the choices all players one checkpoint at a time. The order in which the players choose their actions at each checkpoint is determined by the player who has the smallest time state at the checkpoint being processed. A lower time state value implies that a player was at the given checkpoint before other players, so it would have made its choice at that location before the others in the continuous setting. This ordering also implies that players who arrive at a checkpoint after preceding players observe the actions of those preceding players preserving the realistic flow of information. Most importantly, because the ordering forces the following players to choose last, we also capture the rule that the following players (i.e. those that are ``behind'' others) are responsible for collision avoidance after observing the leading players' actions. As a result, in conjunction with satisfying specification 2, we model realistic collision avoidance rules. 
+Although players make decisions concurrently in the original game and real-life, our discrete abstraction is a modeled as a turn-based game. Because the states are indexed by the checkpoint instead of time, the game is played by evaluating the choices all players one checkpoint at a time. The order in which the players choose their actions at each checkpoint is determined by the player who has the smallest time state at the checkpoint being processed. A lower time state value implies that a player was at the given checkpoint before other players, so it would have made its choice at that location before the others in the continuous setting. This ordering also implies that players who arrive at a checkpoint after preceding players observe the actions of those preceding players preserving the realistic flow of information. Most importantly, because the ordering forces the following players to choose last, we also capture the rule that the following players (i.e. those that are ``behind'' others) are responsible for collision avoidance after observing the leading players' actions. As a result, in conjunction with satisfying specification \eqref{eq:discspec2}, we model realistic collision avoidance rules. 
 
 \subsection{Discrete Game Objective} \label{section:discobj}
 The final component of our discrete game is the determining the rewards and the objective. The reward function for a player $i$ is: 
@@ -213,7 +209,7 @@ The final component of our discrete game is the determining the rewards and the 
 It is zero for all states except the one after all players have reached the final checkpoint. At the final checkpoint, player $i$'s reward is the pairwise difference in the time state with each player after everyone has reached the goal, which resembles the original game formulation's objective \eqref{eq:gen_obj}. The objective for each player is to simply maximize this reward.
 
 \subsection{Summary of Formulation}
-Given the state space, dynamics, and objective of the game, we have effectively constructed a finite dynamic game. We write this game in a more general form as a stochastic multiplayer game (SMG) defined by Chen et al. as a tuple of the following elements \cite{Chen2013}:
+Given the state space, dynamics, and objective of the game, we have effectively constructed a finite dynamic game. We write this game in a more general form as a stochastic multiplayer game (SMG) defined by \citet{Shapley1953} but in the form presented by \citet{Chen2013} as a tuple of the following elements:
 
 
 \begin{itemize}
@@ -255,13 +251,13 @@ Minimum lateral acceleration (force that can be sustained regardless at any tire
 \label{table:params}
 \end{table}
 
-For the results in each case, we plot the ``best" time gap player 1 achieves assuming optimal strategy is implemented by both the players. If this value is positive, it means player 1 has reached the goal position before player 2 and vice-versa if negative. All of the models are implemented using PRISM-games v3.0, a state-of-the-art model checking software \cite{prismgames}. Furthermore, our analysis for each track shape includes a visualization plotting the optimal strategy and comparison of the resulting strategy to a similar, real-life racing scenario. This comparison allows us to verify that the strategic choices of our model synthesis are comparable to human experts. 
+For the results in each case, we plot the ``best" time gap player 1 achieves assuming optimal strategy is implemented by both the players. If this value is positive, it means player 1 has reached the goal position before player 2 and vice-versa if negative. All of the models are implemented using PRISM-games v3.0, a state-of-the-art model checking software \cite{prismgames}. Furthermore, our analysis for each track shape includes a visualization plotting the optimal strategy and comparison of the resulting strategy to a similar, real-life racing scenario. This comparison allows us to verify that the strategic choices of our model synthesis are comparable to human experts. Appendix \ref{app:disc_results} provides detailed results for all of the experiments discussed in the following sections. 
 
 \subsection{Long Straight}
 The first track shape is the simple long straight. In this case, tire wear has little to no effect on the performance of the players because the vehicles are not subject to significant lateral loads. Rather, we know from real-life races that we can having advantage in the initial time gap or higher initial speed when approaching the long straight results in a favorable time gap at the end of the straight. Therefore, we experiment with various initial velocities and time gaps between the players. Player 1's initial value of the time state, i.e. time disadvantage, varies from \SI{0.5}{\second} to \SI{0.7}{\second}. However, player 1's initial speeds may be higher in some experiments yielding the possibility of an overtake.
 
-\begin{figure}[t!]
-\includegraphics[width=\textwidth]{Figures/StraightExp.pdf}
+\begin{figure}
+\includegraphics[width=\textwidth]{Figures/StraightExpNew.pdf}
     \caption[Results of scenarios in long straight case study.] { Plots for the resulting time gap by implementing both players' synthesized optimal strategy for various initial velocities and tire wear percentages in the long straight shape.}
     \label{fig:ls_exp}
 \end{figure}
@@ -279,10 +275,10 @@ Next, we take a deeper dive in Figure \ref{fig:ls} by visualizing the players' s
 % https://youtu.be/64BQ-aXJkxA?t=28
 % https://youtu.be/z0tW3wY758Q?t=57
 \subsection{Hairpin}
- The second track shape is a hairpin turn, which is defined as a 180 degree turn. In reality, these types of turns generally follow long straights, but due state space explosion, the lead up to the hairpin turn is limited to just two checkpoints. Furthermore, because the turns are 180 degrees, the cars do not need to travel very fast. Therefore, having better acceleration and lower tire wear results in better performance in this type of track shape, and this pattern is seen in real-life races. In terms of strategy, the player that is initially ahead ideally positions itself in the middle of the straight approaching the turn to . Then, at the turn, the player wants to be at the innermost lane of the corner to force the opponent to take a wider turn or fall back in line. On the other hand, the player that is initially behind would like to reach the inside lane if at all possible and prevent the car that is ahead from using the inside lane. Tire wear begins to play an important role because it limits how tight of a turn is feasible for the players. Sometimes, the tire wear may be too high such that a player cannot use the inner most lane at the turn. Therefore, in the experiments for this scenario, we fix the initial time gap for racer 1 at 0.5 seconds but use varying combinations of initial velocities and tire wears for the racers. 
+ The second track shape is a hairpin turn, which is defined as a 180 degree turn. In reality, these types of turns generally follow long straights, but due state space explosion, the lead up to the hairpin turn is limited to just two checkpoints. Furthermore, because the turns are 180 degrees, the cars do not need to travel very fast. Therefore, having better acceleration and lower tire wear results in better performance in this type of track shape, and this pattern is seen in real-life races. In terms of strategy, the player that is initially ahead ideally positions itself in the middle of the straight approaching the turn to make it challenging for the opponent to pass. Then, at the turn, the player targets to be at the innermost lane of the corner to force the opponent to take a wider turn or fall back in line. On the other hand, the player that is initially behind would like to reach the inside lane if at all possible and prevent the car that is ahead from using the inside lane. Tire wear begins to play an important role because it limits how tight of a turn is feasible for the players. Sometimes, the tire wear may be too high such that a player cannot use the inner most lane at the turn. Therefore, in the experiments for this scenario, we fix the initial time gap for racer 1 at 0.5 seconds but use varying combinations of initial velocities and tire wears for the racers. 
 
-\begin{figure}[t!]
-\includegraphics[width=\textwidth]{Figures/HairpinExp.pdf} 
+\begin{figure}
+\includegraphics[width=\textwidth]{Figures/HairpinExpNew.pdf} 
     \caption[Results of scenarios in hairpin case study.] {Plots for the resulting time gap by implementing both players' synthesized optimal strategy for various initial velocities and tire wear percentages in the hairpin shape.}
     \label{fig:hp_exp}
 \end{figure}
@@ -302,8 +298,8 @@ Next, we take a deeper dive in Figure \ref{fig:hp} to visualize the synthesized 
 \subsection{Chicane}
  The final track shape is a chicane, which is a successive pair of turns of opposite direction (left-right or right-left). The chicane puts a greater emphasis on the tire wear than the prior two shapes, and success depends on the parameters of lateral force parameters of a player's vehicle. The inside of one turn is the outside of the following turn, so the racers must also have the low tire wear to maintain high speed over the shortest distance, which is hit the inside lane of both turns. Otherwise, compromising by selecting the middle lane may allow the other player to pass on the inside of one of the turns. In similar fashion to the hairpin case study experiments, we fix the initial time gap for player 1 at \SI{0.5}{\second} and use varying combinations of initial velocities and tire wears for these experiments.
  
- \begin{figure}[t!]
-\includegraphics[width=\textwidth]{Figures/ChicaneExp.pdf}
+ \begin{figure}
+\includegraphics[width=\textwidth]{Figures/ChicaneExpNew.pdf}
     \caption[Results of scenarios in chicane case study.] {Plots for the resulting time gap by implementing both players' synthesized optimal strategy for various initial velocities and tire wear percentages in the chicane shape.}
     \label{fig:ch_exp}
 \end{figure}
