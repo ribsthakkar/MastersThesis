@@ -714,6 +714,60 @@
         -0.5 & 80 & 5 & 80 & 4 & 2090374 & 192.195 & -0.6 \\ \hline
 \bottomrule
 \end{longtable}
+\chapter{Multi-Agent Reinforcement Learning Controller Reward Structure Details} \label{app:rl_details}
+We outline the specifics of the reward and penalty calculations in detail for our Multi-Agent Reinforcement Learning (MARL) low-level controller. Recall that the MARL-based agents observations include perfect state information for all players (including $(x, y)$ position, $v$ velocity, lane ID $a$, ``recent'' lane change count $e$, and last passed checkpoint $r$) and 9 LIDAR rays, whose distances we refer to as $I_1, \ldots, I_9$. Furthermore, we also assume players know the overall time elapsed in the game $t$, and the maximum time horizon $T$. 
+Our rewards and penalties are categorized in two types. There are those that are provided at every step in the game, and there are those which are provided each time a player passes a checkpoint. We list functions $R(\cdot)$ that evaluate the rewards or penalties based on one or more weight parameters denoted by $\omega_i$. 
+
+For every time step in the environment, we provide the following rewards and penalties:
+\begin{itemize}
+    \item A reward for driving fast. The reward that scales based on the driving close to the top speed of the kart.
+    \begin{equation*}
+        R_{\text{speed}}(\omega_1) = \omega_1 \frac{v}{v_{\text{max}}}
+    \end{equation*}
+    \item A reward for moving towards the next checkpoint $r*$. We use the three-dimensional velocity vector of the agent and take the dot product with the vector between the agent's position and the next checkpoint position.
+    \begin{equation*}
+        R_{\text{direction}}(\omega_1) = \omega_1 (\langle v_x, v_y \rangle \cdot \langle r^*_x-x , r^*_y - y\rangle)
+    \end{equation*}
+    \item A penalty for exceeding the lane changing limit. We use an indicator function to determine if the player is in the straight region of the track $\mathcal{S}$ and whether the lane changing limit $L$ is exceeded.
+    \begin{equation*}
+        R_{\text{swerve}}(\omega_1) = -\omega_1 \mathds{1}_{(x,y) \in \mathcal{S} \wedge e > L}
+    \end{equation*}
+    \item A penalty for being within $h$ meters of the wall. We use an indicator function $\mathds{1}_{I_j < h \wedge I_j \text{hit wall}}$ that determines if he LIDAR reading is below $h$ and if whether the LIDAR bounced off a player or a wall.
+    \begin{equation*}
+        R_{\text{wall-hit}}(\omega_1) = -\sum_{j=1}^9 \omega_1 \mathds{1}_{I_j < h \wedge I_j \text{hit wall}}
+    \end{equation*}
+    \item A penalty for being within $h$ meters of another player. Using a similar indicator function from above, if any LIDAR ray in that set hits another player within a distance $h$, then the original player is penalized for being in collision. In addition, we assume we have a set $\Theta$, which contains the indices of the LIDAR rays that point towards the front of the kart. There is an additional penalty if the LIDAR rays come from the subset $\Theta$ as that indicates some form of rear-end collision where the player would be at fault. 
+    \begin{equation*}
+        R_{\text{player-hit}}(\omega_1, \omega_2) = -\sum_{j=1}^9 (\omega_1 \mathds{1}_{I_j < h \wedge I_j \text{hit player}} + \omega_2 \mathds{1}_{j \in \Theta})
+    \end{equation*}
+\end{itemize}
+
+We provide the following rewards and penalties when a player passes a checkpoint with index $r'$:
+\begin{itemize}
+    \item A reward to teach the policy to pass as many checkpoints as possible before other players. The reward is scaled based on the order in which the checkpoint is reached. This reward is also added (with a different weight parameter) to a shared reward value used by the posthumous credit assignment algorithm to incentivize cooperative behavior. 
+    \begin{equation*}
+        R_{\text{checkpoint base}}(\omega_1) = 
+        \begin{cases}
+            \omega_1 & \text{if first} \\
+            0.75\omega_1 & \text{if second} \\
+            0.6\omega_1 & \text{if third} \\
+            0.4\omega_1 & \text{if fourth} \\
+        \end{cases}
+    \end{equation*}
+    \item A reward based on the remaining time in the game to incentivize minimizing time between checkpoints. This reward is also added (with a different weight parameter) to a shared reward value used by the posthumous credit assignment algorithm to incentivize cooperative behavior. 
+    \begin{equation*}
+        R_{\text{checkpoint time}}(\omega_1) = \omega_1\frac{T-t}{T}
+    \end{equation*}
+    \item A reward for being closer to the target lane $a'$ and velocity $v'$ for the passed checkpoint.
+    \begin{align*}
+        R_{\text{checkpoint target}}(\omega_1, \omega_2) = & \frac{\omega_1}{1.3^{|a-a'|\sqrt{(a'_x-x)^2+(a'_y-y)^2}}} \\
+        & + \frac{\omega_2}{1.1^{|v-v'|}}
+       \end{align*}
+    \item A penalty for driving in reverse. We use an indicator function to determine if checkpoint index $r'$ is less than or equal to $r$ implying the player passed either the same checkpoint or an earlier checkpoint.
+    \begin{equation*}
+        R_{\text{checkpoint reverse}}(\omega_1) = -\omega_1\mathds{1}_{r' \leq r}
+    \end{equation*}
+\end{itemize}
 \chapter{Results from head-to-head racing experiments} \label{app:hier_results}
 The following tables present all of the metrics collected for the head-to-head racing experiments from Chapter \ref{chapter:hier}. All of the metrics are discussed in Chapter \ref{chapter:hier} except for DNFs and win margins. DNFs refers the number of races that an agent did not finish. Win margins refers to the number of seconds by which a player finished ahead of the other.
 \begin{table}[H]

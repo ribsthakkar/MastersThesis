@@ -21,6 +21,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage[numbers]{natbib}
+\usepackage[nottoc]{tocbibind}
 \usepackage{adjustbox}
 \usepackage{longtable}
 % \usepackage{appendix}
@@ -88,7 +89,7 @@
 % that have the \ as their second character).
 %
 \degree{Master of Science in Computational Science, Engineering, and Mathematics}
-\degreeabbr{M.S.}
+\degreeabbr{M.S.C.S.E.M.}
 
 % Uncomment the line below that corresponds to the type of master's
 % document you are writing.
@@ -190,8 +191,8 @@
 			% Now @ cannot be used in commands.
 \begin{document}
 \copyrightpage
-\titlepage
 \commcertpage
+\titlepage
 \begin{acknowledgments}	
 % Ufuk Topcu
 % Stephen Boyles
@@ -200,15 +201,15 @@
 % Mita, Karthik, Atulya, Alex, Avinash, Ryan, Amit, Monish, Brian
 % Dinesh, Aryaman, Mohit, Ari, Arvind, Divyansh, Spartalab
 % Brother/Parents
-This project and my five years of education at The University of Texas at Austin have come together through support many people. First, I would like to thank my advisor, Dr. Ufuk Topcu, for his support over the last two years and encouraging me to pursue this work. I have always loved computer science, racecars, and games, but I never thought that I would have the opportunity to bring them into the center of my graduate research. I thank Dr. David Fridovich-Keil for helping me transform my ideas into reality and his suggestions continually improve my work. I thank Dr. Zhe Xu for his advice to pursue publishing this project. I also thank Dr. Ilyas Iyoob who taught me how to be an independent researcher and lead projects.
+This project and my five years of education at The University of Texas at Austin have come together through the support of many people. First, I would like to thank my advisor, Dr. Ufuk Topcu, for his support over the last two years and for encouraging me to pursue this work. I have always loved computer science, racecars, and strategy games, but I never thought that I would have the opportunity to bring them into the center of my graduate research. I thank Dr. David Fridovich-Keil for helping me transform my ideas into reality and for his suggestions for continually improving my work. I thank Dr. Zhe Xu for his advice to pursue publishing this project. I also thank Dr. Ilyas Iyoob who taught me how to be an independent researcher and manage large-scale projects.
 
-I would like especially show my appreciation for Dr. Stephen Boyles who introduced me to the world of scientific research and vast collection of deceptively challenging problems waiting to be solved. Thank you for welcoming me into SPARTA lab as an undergraduate trying finding his way around the university. Your advice and continued support is greatly appreciated. 
+I would like especially show my appreciation for Dr. Stephen Boyles who introduced me to the world of scientific research and the vast collection of deceptively challenging problems waiting to be solved. Thank you for welcoming me into SPARTA lab as an undergraduate trying to find his way around the university. Your advice and continued support are greatly appreciated. 
 
 I am grateful for the advice of my research mentors and peers, William E. Alexander, Aryaman S. Samyal, Carlin Liao, and Omar Hasan, with whom I have had the privilege to collaborate and who have helped me bring my work to life.
 
-I am thankful for my old friends, Karthik Velayutham, Atulya Vaidya, Alex Spiride, Avinash Damania, Ryan Menghani, Amit Samuel, Monish Challagondla, Brian Nguyen, Mohit Patel, K. Arvind Prasad, Arihant Jain, and Divyansh Devnani, who have always given an ear for my endless rambling about the latest problem I am trying to solve. I am also thankful for my friends who I met at UT, Aparna Krishnan, Ritvik Annam, Anusha Paul, and Dinesh Balakrishnan for their encouragement through this journey. I am especially appreciative of Mita Dixit's unwavering friendship and love. 
+I am thankful for my old friends, Karthik Velayutham, Atulya Vaidya, Alex Spiride, Avinash Damania, Ryan Menghani, Amit Samuel, Monish Challagondla, Brian Nguyen, Mohit Patel, K. Arvind Prasad, Arihant Jain, and Divyansh Devnani, who have always given an ear for my endless rambling about the latest problem I am trying to solve. I am also thankful for my friends whom I met at UT, Aparna Krishnan, Ritvik Annam, Anusha Paul, and Dinesh Balakrishnan for their encouragement through this journey. I am especially appreciative of Mita Dixit's unwavering friendship and love. 
 
-Finally, I am grateful my family's unconditional love and immeasurable support. My parents, Hemangini and Saumil Thakkar, have sacrificed much to provide me with the opportunity to receive this education at a prestigious university. My brother, Rishi Thakkar, has always been by my side, and I am forever grateful for his support. 
+Finally, I am grateful for my family's unconditional love and immeasurable support. My parents, Hemangini and Saumil Thakkar, have sacrificed much to provide me with the opportunity to receive this education at a prestigious university. My brother, Rishi Thakkar, has always been by my side, and I am forever grateful for his support. 
 \end{acknowledgments}
 
 
@@ -219,11 +220,11 @@ Finally, I am grateful my family's unconditional love and immeasurable support. 
 %
 \utabstract
 \indent 
-We develop a hierarchical control scheme for autonomous racing with realistic safety and fairness rules. The first part constructs a discrete game approximation with simplified dynamics where the rules are outlined as temporal logic specifications. Using the discrete representation, a model checking tool is used to synthesize an optimal strategy in the form of a series of target waypoints. The model is applied to several case studies of common racing scenarios, and its resulting strategies are qualitatively compared against those executed by racing experts. This formulation is used as the high-level planner in the hierarchical controller but is solved using Monte Carlo tree search (MCTS) to run in real time.
+We develop a hierarchical control scheme for autonomous racing with realistic safety and fairness rules. The first part constructs a discrete game approximation with simplified dynamics and rules presented as temporal logic specifications. Using the discrete representation, we use a model checking tool to synthesize an optimal strategy in the form of a sequence of target waypoints. We apply the model to several case studies of common racing scenarios, and its resulting strategies are qualitatively verified against those executed by racing experts. This formulation is used as the high-level planner in the hierarchical controller but is solved using Monte Carlo tree search (MCTS) to run in real-time.
 
-In the next part, the high-level planner is integrated with a low-level controller to track the target waypoints. Two low-level approaches are considered including multi-agent reinforcement learning (MARL) methods and a linear-quadratic Nash game (LQNG) formulation producing two hierarchical controllers MCTS-RL and MCTS-LQNG, respectively. The hierarchical agents are tested against three baselines: an end-to-end MARL controller, a MARL controller tracking the optimal racing line, and an LQNG controller tracking the optimal racing line. The controllers compete head-to-head on an oval track and a complex track where the number of wins and a safety score representing the number of rule violations are counted. The hierarchical controllers outperform their respective baseline methods in terms of wins. The MCTS-RL controller outperforms all of the other controllers in terms of both metrics and executes maneuvers resembling those seen in real-life racing.
+In the next part, we integrate the high-level planner with a low-level controller to track the target waypoints. Two low-level approaches are considered: a multi-agent reinforcement learning (MARL) trained policy and a linear-quadratic Nash game (LQNG) formulation. As a result, we produce two hierarchical controllers, MCTS-RL and MCTS-LQNG, respectively. The hierarchical agents are tested against three baselines: an end-to-end MARL controller, a MARL controller tracking the optimal racing line, and an LQNG controller tracking the optimal racing line. The controllers compete head-to-head on an oval track and a complex track, and we count the number of wins and a safety score representing the number of rule violations. Our hierarchical controllers outperform their respective baseline methods in terms of wins, but only MCTS-RL is better than its baselines in terms of safety score. The MCTS-LQNG controller has a worse safety score, but this result is due to the simplicity and conservative nature of the fixed trajectory LQNG baseline.  Overall, the MCTS-RL controller outperforms all of the other controllers across both metrics and executes maneuvers resembling those seen in real-life racing.
 
-In the final part, the hierarchical controllers are extended to team-based racing where there is a mix of competitive and cooperative objectives. The formulations are generalized to consider these challenging objectives while still required to adhere to the complex rules. The same set of controllers and baselines compete in races as a pair of controllers of the same type competing against another homogeneous pair. In addition to the number of wins and safety score, the overall team performance is also measured by allocating points based on finishing position. Again, the hierarchical agents outperform their baselines in terms of wins, but they also have higher number of points per race indicating greater success as a team. Finally, MCTS-RL continues to outperform all of the implemented controllers and displays tactics performed by expert human drivers.
+In the final part, we extend the hierarchical controllers to team-based racing where they must consider a mixture of competitive and cooperative objectives. The formulations are generalized to consider these challenging objectives while still being required to adhere to the complex rules. We test our controllers against the previously discussed baselines in races where the agents compete in teams of two instead of head-to-head. In addition to counting the number of wins and the safety score, we introduce a third metric to measure the cooperative performance of the controllers. We allocate points based on the finishing position of each agent and aggregate them across the teams, which indicates how the team performed as a whole. The results show our hierarchical agents outperforming their baselines in terms of wins while maintaining similar safety scores. In addition, our controllers also have a higher number of average points per race indicating that they produce greater success as a team. Finally, we observe that the MCTS-RL controller continues to outperform all of the other implemented controllers across all metrics and exhibits tactics performed by expert human drivers.
 
 We show that hierarchical planning for game-theoretic reasoning produces competitive behavior even when challenged with complex objectives, rules, and constraints.
 
@@ -244,11 +245,7 @@ We show that hierarchical planning for game-theoretic reasoning produces competi
 
 \appendices
 \input{appendix}
-\nocite{*}      % This command causes all items in the 		     %
-                % bibliographic database to be added to 	     %
-                % the bibliography, even if they are not 	     %
-                % explicitly cited in the text. 		     %
-		%						     %
+\nocite{*}  
 \bibliographystyle{unsrtnat}  % Here the bibliography 		     %
 \bibliography{bibliography}        % is inserted.			     %
 \end{document}

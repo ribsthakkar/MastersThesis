@@ -57,7 +57,7 @@
 \parskip 5 pt plus 1.5pt minus .5pt
 \itemsep 0 pt plus .5pt
 
-\pagenumbering{roman}
+\pagenumbering{arabic}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Macros to Modify Some Default Settings of `report.sty'. %
@@ -394,7 +394,7 @@
     \@makechapterhead{#2} \@afterheading
     \ifnum\chap@or@app=1 \ifnum\value{chapter}=1         % if Chapter 1
         \markboth{}{}\pagestyle{myheadings}
-        \ifnum\with@parts=0 \pagenumbering{arabic}\fi% Restart page number only
+        % \ifnum\with@parts=0 \pagenumbering{arabic}\fi% Restart page number only
                                                  % if there are no parts (MAL)
                                            \fi\fi 
         \thispagestyle{plain}}
@@ -520,7 +520,7 @@
 	% when creating master's document.
 				%	08 Apr 2002	cwm
 %
-\def\certif@words{ }		%	13 Mar 2002	cwm
+\def\certif@words{The report }		%	13 Mar 2002	cwm
 %
 \def\approvalwords{%
          \leftline{\hbox to 2.5in{}APPROVED BY\hfill}         %           
@@ -552,8 +552,11 @@
 	% when creating master's document.
 				%	08 Apr 2002	cwm
 %
-\def\certif@words{ }		%	13 Mar 2002	cwm
-%
+\def\certif@words{		%	26 Aug 2001	cwm
+	\centerline{The Report Committee for \au@thor}
+	\centerline{Certifies that this is the approved version\ 
+		of the following Report:}		
+                                           }%
 \def\approvalwords{%
          \leftline{\hbox to 2.5in{}APPROVED BY\hfill}            % 
          \leftline{\hbox to 2.5in{}SUPERVISING COMMITTEE:\hfill} %
@@ -800,7 +803,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %       Committee Certification Page	22 Jul 2001	cwm
 %
-\def\commcertpage{\thispagestyle{empty}
+\def\commcertpage{
+% \thispagestyle{empty}
     \certif@words
     \vspace*{75pt}
     \baselineskip=16.5pt plus .5pt minus .2 pt
@@ -828,7 +832,8 @@
 %
 %       Copyright Page
 %
-\def\copyrightpage{\thispagestyle{empty}
+\def\copyrightpage{
+% \thispagestyle{empty}
     \vspace*{\fill}
     \centerline{Copyright}
     \vspace*{5pt}
@@ -842,14 +847,16 @@
 %
 %       Dedication Page
 %
-\newenvironment{dedication}{\thispagestyle{empty}
+\newenvironment{dedication}{
+% \thispagestyle{empty}
     \vspace*{170pt}\begin{center}\default@spacing}%
     {\end{center}\clearpage}
 
 %
 %       Title Page
 %
-\def\titlepage{\thispagestyle{empty}
+\def\titlepage{
+% \thispagestyle{empty}
     \vspace*{5pt}
     \baselineskip=22.5pt plus .5pt minus .2 pt
     \begin{center}
