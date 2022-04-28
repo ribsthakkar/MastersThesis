@@ -24,6 +24,8 @@
 \usepackage[nottoc]{tocbibind}
 \usepackage{adjustbox}
 \usepackage{longtable}
+% \usepackage{bibentry}
+% \nobibliography*
 % \usepackage{appendix}
 \usepackage{enumitem}
 
@@ -36,6 +38,7 @@
 \usepackage[hyphens]{url}
 \PassOptionsToPackage{hyphens}{url}
 \usepackage{hyperref}
+\renewcommand*{\theHchapter}{\thepart.\thechapter}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -193,6 +196,9 @@
 \copyrightpage
 \commcertpage
 \titlepage
+\begin{dedication}
+Dedicated to all of my teachers.
+\end{dedication}
 \begin{acknowledgments}	
 % Ufuk Topcu
 % Stephen Boyles
@@ -201,9 +207,9 @@
 % Mita, Karthik, Atulya, Alex, Avinash, Ryan, Amit, Monish, Brian
 % Dinesh, Aryaman, Mohit, Ari, Arvind, Divyansh, Spartalab
 % Brother/Parents
-This project and my five years of education at The University of Texas at Austin have come together through the support of many people. First, I would like to thank my advisor, Dr. Ufuk Topcu, for his support over the last two years and for encouraging me to pursue this work. I have always loved computer science, racecars, and strategy games, but I never thought that I would have the opportunity to bring them into the center of my graduate research. I thank Dr. David Fridovich-Keil for helping me transform my ideas into reality and for his suggestions for continually improving my work. I thank Dr. Zhe Xu for his advice to pursue publishing this project. I also thank Dr. Ilyas Iyoob who taught me how to be an independent researcher and manage large-scale projects.
+This project and my five years of education at The University of Texas at Austin have come together through the support of many people. First, I would like to thank my advisor, Dr. Ufuk Topcu, for his support over the last two years and for encouraging me to pursue this work. I have always loved computer science, racecars, and strategy games, but I never thought that I would have the opportunity to bring them together into the center of my graduate research. I thank Dr. David Fridovich-Keil for helping me transform my ideas into reality and for his suggestions for continually improving my work. I thank Dr. Zhe Xu for his advice to pursue publishing this project. I also thank Dr. Ilyas Iyoob who taught me how to be an independent researcher and manage large-scale projects.
 
-I would like especially show my appreciation for Dr. Stephen Boyles who introduced me to the world of scientific research and the vast collection of deceptively challenging problems waiting to be solved. Thank you for welcoming me into SPARTA lab as an undergraduate trying to find his way around the university. Your advice and continued support are greatly appreciated. 
+I would like to especially show my appreciation for Dr. Stephen Boyles who introduced me to the world of scientific research and the vast collection of deceptively challenging problems waiting to be solved. Thank you for welcoming me into SPARTA lab as an undergraduate trying to find his way around the university. Your advice and continued support are greatly appreciated. 
 
 I am grateful for the advice of my research mentors and peers, William E. Alexander, Aryaman S. Samyal, Carlin Liao, and Omar Hasan, with whom I have had the privilege to collaborate and who have helped me bring my work to life.
 
